@@ -36,8 +36,8 @@ jobs:
       - run: pnpm install
       - run: pnpm build
         env:
-          TARGET_HUGGINGFACE_SPACE: "true"
-          VITE_APP_TARGET_HUGGINGFACE_SPACE: "true"
+          TARGET_HUGGINGFACE_SPACE: 'true'
+          VITE_APP_TARGET_HUGGINGFACE_SPACE: 'true'
 
       - id: moonshine_web_diff
         working-directory: ./apps/moonshine-web/dist

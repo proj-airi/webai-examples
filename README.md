@@ -10,7 +10,7 @@ pnpm i
 pnpm dev
 ```
 
-## Other side projects born from this project
+## Other side projects born from Project Airi
 
 - [`unspeech`](https://github.com/moeru-ai/unspeech): Universal endpoint proxy server for `/audio/transcriptions` and `/audio/speech`, like LiteLLM but for any ASR and TTS
 - [`hfup`](https://github.com/moeru-ai/airi/tree/main/packages/hfup): tools to help on deploying, bundling to HuggingFace Spaces

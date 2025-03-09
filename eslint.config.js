@@ -11,6 +11,8 @@ export default antfu(
       'apps/stage-tamagotchi/out/**',
       '**/drizzle/**',
       '**/.astro/**',
+      'cspell.config.yaml',
+      'pnpm-workspace.yaml',
     ],
     rules: {
       'import/order': [
