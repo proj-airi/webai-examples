@@ -18,20 +18,20 @@
   },
   "dependencies": {
     "@tresjs/core": "^4.3.3",
-    "@unocss/reset": "^66.1.0-beta.3",
-    "@vueuse/core": "^12.8.2",
-    "@vueuse/motion": "^2.2.6",
-    "hfup": "^0.3.6",
+    "@unocss/reset": "^66.1.0-beta.12",
+    "@vueuse/core": "^13.1.0",
+    "@vueuse/motion": "^3.0.3",
+    "hfup": "^0.5.0",
     "ofetch": "^1.4.1",
-    "three": "^0.174.0",
+    "three": "^0.175.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@huggingface/transformers": "^3.4.0",
-    "@types/audioworklet": "^0.0.71",
-    "@types/three": "^0.174.0",
-    "@vitejs/plugin-vue": "^5.2.1",
-    "@webgpu/types": "^0.1.55",
+    "@huggingface/transformers": "^3.5.0",
+    "@types/audioworklet": "^0.0.74",
+    "@types/three": "^0.175.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "@webgpu/types": "^0.1.60",
     "vue-tsc": "^2.2.8"
   }
 }
