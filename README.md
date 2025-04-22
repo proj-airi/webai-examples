@@ -1,4 +1,4 @@
-<h1 align="center">アイリ企画 Project AIRI Web AI Examples</h1>
+<h1 align="center">Web AI Examples</h1>
 
 ## Development
 
