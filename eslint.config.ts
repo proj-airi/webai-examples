@@ -4,13 +4,10 @@ import antfu from '@antfu/eslint-config'
 export default antfu(
   {
     unocss: true,
-    formatters: true,
+    vue: true,
     ignores: [
       '**/assets/js/**',
       '**/assets/live2d/models/**',
-      'apps/stage-tamagotchi/out/**',
-      '**/drizzle/**',
-      '**/.astro/**',
       'cspell.config.yaml',
       'pnpm-workspace.yaml',
     ],
