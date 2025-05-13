@@ -1,14 +1,12 @@
-<h1 align="center">Moonshine Web (Vue)</h1>
+<h1 align="center">SmolVLM Realtime WebGPU (Vue)</h1>
 
 <p align="center">
-  [<a href="https://moonshine-web-vue.netlify.app/">Try it</a>]
+  [<a href="https://smolvlm-realtime-webgpu-vue.netlify.app/">Try it</a>]
 </p>
 
-> Heavily inspired by [Realtime in-browser speech recognition](https://huggingface.co/spaces/webml-community/moonshine-web)
+> Heavily inspired by [ngxson/smolvlm-realtime-webcam: Real-time webcam demo with SmolVLM and llama.cpp server](https://github.com/ngxson/smolvlm-realtime-webcam?tab=readme-ov-file)
 
-# Moonshine Web
-
-A simple Vue + Vite application for running [Moonshine Base](https://huggingface.co/onnx-community/moonshine-base-ONNX), a powerful speech-to-text model optimized for fast and accurate automatic speech recognition (ASR) on resource-constrained devices. It runs locally in the browser using Transformers.js and WebGPU-acceleration (or WASM as a fallback).
+# SmolVLM Realtime WebGPU
 
 ## Getting Started
 
@@ -19,7 +17,7 @@ Follow the steps below to set up and run the application.
 Clone the examples repository from GitHub:
 
 ```sh
-git clone https://github.com/moeru-ai/airi.git
+git clone https://github.com/proj-airi/webai-examples.git
 ```
 
 ### 2. Navigate to the Project Directory
@@ -27,7 +25,7 @@ git clone https://github.com/moeru-ai/airi.git
 Change your working directory to the `moonshine-web` folder:
 
 ```sh
-cd packages/moonshine-web
+cd apps/smolvlm-realtime-webgpu
 ```
 
 ### 3. Install Dependencies
@@ -50,8 +48,6 @@ The application should now be running locally. Open your browser and go to `http
 
 ## Acknowledgements
 
-The audio visualizer was adapted from Wael Yasmina's [amazing tutorial](https://waelyasmina.net/articles/how-to-create-a-3d-audio-visualizer-using-three-js/).
-
 Great thanks to what Xenova have done.
 
-> [Source code](https://github.com/huggingface/transformers.js-examples/tree/38a883dd465d70d7368b86b95aa0678895ca4e83/moonshine-web)
+> [Source code](https://huggingface.co/spaces/webml-community/smolvlm-realtime-webgpu/blob/main/index.html)
