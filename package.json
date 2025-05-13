@@ -1,5 +1,5 @@
 {
-  "name": "airi-vtuber",
+  "name": "@proj-airi/webai-examples",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.10.0",
@@ -41,7 +41,7 @@
     "changelogithub": "^13.13.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.26.0",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^16.0.0",
     "rollup": "^4.40.2",
     "simple-git-hooks": "^2.13.0",
     "taze": "^19.1.0",
