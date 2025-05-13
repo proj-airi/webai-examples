@@ -67,7 +67,7 @@ jobs:
           git push -f
 
       - id: smolvlm_realtime_webgpu_diff
-        working-directory: ./apps/moonshine-web/dist
+        working-directory: ./apps/smolvlm-realtime-webgpu/dist
         run: |-
           git lfs ls-files --all
           git add .
@@ -76,7 +76,7 @@ jobs:
           fi
 
       - if: steps.smolvlm_realtime_webgpu_diff.outputs.changes == 'true'
-        working-directory: ./apps/moonshine-web/dist
+        working-directory: ./apps/smolvlm-realtime-webgpu/dist
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
