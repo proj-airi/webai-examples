@@ -115,6 +115,40 @@ importers:
         specifier: ^2.2.10
         version: 2.2.10(typescript@5.8.3)
 
+  apps/smolvlm-realtime-webgpu:
+    dependencies:
+      '@unocss/reset':
+        specifier: ^66.1.1
+        version: 66.1.1
+      '@vueuse/core':
+        specifier: ^13.1.0
+        version: 13.1.0(vue@3.5.13(typescript@5.8.3))
+      '@vueuse/motion':
+        specifier: ^3.0.3
+        version: 3.0.3(magicast@0.3.5)(rollup@4.40.2)(vue@3.5.13(typescript@5.8.3))
+      hfup:
+        specifier: ^0.5.0
+        version: 0.5.0(@types/node@22.15.17)(jiti@2.4.2)(less@4.2.1)(terser@5.17.6)(tsx@4.19.3)(yaml@2.7.1)
+      ofetch:
+        specifier: ^1.4.1
+        version: 1.4.1
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.13(typescript@5.8.3)
+    devDependencies:
+      '@huggingface/transformers':
+        specifier: ^3.5.1
+        version: 3.5.1
+      '@vitejs/plugin-vue':
+        specifier: ^5.2.4
+        version: 5.2.4(vite@6.3.5(@types/node@22.15.17)(jiti@2.4.2)(less@4.2.1)(terser@5.17.6)(tsx@4.19.3)(yaml@2.7.1))(vue@3.5.13(typescript@5.8.3))
+      '@webgpu/types':
+        specifier: ^0.1.60
+        version: 0.1.60
+      vue-tsc:
+        specifier: ^2.2.10
+        version: 2.2.10(typescript@5.8.3)
+
   apps/whisper-webgpu:
     dependencies:
       '@unocss/reset':

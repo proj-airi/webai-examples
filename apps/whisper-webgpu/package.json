@@ -5,7 +5,7 @@
   "description": "Yet another WebGPU based Whisper Realtime STT re-implemented",
   "author": {
     "name": "Project AIRI Team",
-    "email": "airi-team@moeru.ai",
+    "email": "airi@moeru.ai",
     "url": "https://github.com/proj-airi"
   },
   "license": "MIT",
