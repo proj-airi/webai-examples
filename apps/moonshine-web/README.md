@@ -19,7 +19,7 @@ Follow the steps below to set up and run the application.
 Clone the examples repository from GitHub:
 
 ```sh
-git clone https://github.com/moeru-ai/airi.git
+git clone https://github.com/proj-airi/webai-examples.git
 ```
 
 ### 2. Navigate to the Project Directory
@@ -27,7 +27,7 @@ git clone https://github.com/moeru-ai/airi.git
 Change your working directory to the `moonshine-web` folder:
 
 ```sh
-cd packages/moonshine-web
+cd apps/moonshine-web
 ```
 
 ### 3. Install Dependencies
