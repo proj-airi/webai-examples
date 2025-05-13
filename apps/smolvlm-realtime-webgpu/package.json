@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "build": "vite build",
-    "dev": "vite  --port 5175",
+    "dev": "vite  --port 5176",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit"
@@ -20,12 +20,16 @@
     "@unocss/reset": "^66.1.1",
     "@vueuse/core": "^13.1.0",
     "@vueuse/motion": "^3.0.3",
+    "@xsai-transformers/shared": "^0.0.5",
+    "gpuu": "^1.0.2",
     "hfup": "^0.5.0",
     "ofetch": "^1.4.1",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@huggingface/transformers": "^3.5.1",
+    "@iconify-json/simple-icons": "^1.2.34",
+    "@iconify-json/solar": "^1.2.2",
     "@vitejs/plugin-vue": "^5.2.4",
     "@webgpu/types": "^0.1.60",
     "vue-tsc": "^2.2.10"
