@@ -22,7 +22,6 @@ export default defineConfig({
       license: 'mit',
       models: ['HuggingFaceTB/SmolVLM-Instruct'],
       short_description: 'Yet another WebGPU based SmolVLM, re-implemented in Vue',
-      thumbnail: 'https://raw.githubusercontent.com/proj-airi/webai-examples/refs/heads/main/apps/smolvlm-realtime-webgpu/public/banner.png',
     }),
   ],
   worker: { format: 'es' },
