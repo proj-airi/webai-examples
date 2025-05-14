@@ -15,6 +15,7 @@ import {
   TextStreamer,
   WhisperForConditionalGeneration,
 } from '@huggingface/transformers'
+import { isWebGPUSupported } from 'gpuu/webgpu'
 
 const MAX_NEW_TOKENS = 64
 
@@ -43,7 +44,7 @@ class AutomaticSpeechRecognitionPipeline {
         encoder_model: 'fp32', // 'fp16' works too
         decoder_model_merged: 'q4', // or 'fp32' ('fp16' is broken)
       },
-      device: 'webgpu',
+      device: (await isWebGPUSupported()) ? 'webgpu' : 'wasm',
       progress_callback,
     }) as Promise<unknown> as Promise<WhisperModel>
 

@@ -2,7 +2,7 @@
   "name": "@proj-airi/webai-examples",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.11.0",
   "description": "LLM powered virtual character",
   "author": {
     "name": "Project AIRI Team",
@@ -33,7 +33,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^4.13.0",
     "@antfu/ni": "^24.3.0",
-    "@types/node": "^22.15.17",
+    "@types/node": "^22.15.18",
     "@unocss/eslint-config": "^66.1.1",
     "@unocss/eslint-plugin": "^66.1.1",
     "@vitest/coverage-v8": "3.0.5",

@@ -3,14 +3,9 @@ import type { PreTrainedModel, Processor, ProgressInfo, Tensor } from '@huggingf
 import type { WorkerMessageEvent } from './types'
 
 import { AutoModelForVision2Seq, AutoProcessor, RawImage } from '@huggingface/transformers'
-import { check } from 'gpuu/webgpu'
+import { isWebGPUSupported } from 'gpuu/webgpu'
 
 import { MessageStatus } from './types'
-
-async function isWebGPUSupported(): Promise<boolean> {
-  const result = await check()
-  return result.supported
-}
 
 let processor: Processor
 let model: PreTrainedModel

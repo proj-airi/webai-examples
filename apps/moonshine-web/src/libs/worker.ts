@@ -3,6 +3,7 @@ import type { AutomaticSpeechRecognitionPipeline, PreTrainedModel } from '@huggi
 import type { MessageEvent as InternalMessageEvent, MessageEventBufferRequest, MessageEventError, MessageEventInfo, MessageEventOutput, MessageEventStatus } from './types'
 
 import { AutoModel, pipeline, Tensor } from '@huggingface/transformers'
+import { isWebGPUSupported } from 'gpuu/webgpu'
 
 import {
   EXIT_THRESHOLD,
@@ -14,7 +15,6 @@ import {
   SPEECH_PAD_SAMPLES,
   SPEECH_THRESHOLD,
 } from '../constants'
-import { supportsWebGPU } from '../utils'
 import { Duration, MessageStatus, MessageType } from './types'
 
 export type DType = Record<string, Exclude<NonNullable<Required<Parameters<typeof pipeline>>[2]['dtype']>, string>[string]>
@@ -174,7 +174,7 @@ function dispatchForTranscriptionAndResetAudioBuffer(overflow?: Float32Array<Arr
 }
 
 async function load() {
-  const device = (await supportsWebGPU()) ? 'webgpu' : 'wasm'
+  const device = (await isWebGPUSupported()) ? 'webgpu' : 'wasm'
   self.postMessage({ type: MessageType.Info, message: `Using device: "${device}"` } satisfies MessageEventInfo)
   self.postMessage({
     type: MessageType.Info,
