@@ -2,12 +2,13 @@
 import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } from '@xsai-transformers/shared/types'
 
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
+import { check } from 'gpuu/webgpu'
 import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
 import { dispose, load, process } from './libs/vlm'
 
-const { videoInputs } = useDevicesList({ constraints: { video: true, audio: false }, requestPermissions: true })
+const { videoInputs, permissionGranted, isSupported } = useDevicesList({ constraints: { video: true, audio: false }, requestPermissions: true })
 
 const videoScreenContainer = ref<HTMLDivElement>()
 const videoScreen = ref<HTMLVideoElement>()
@@ -21,6 +22,7 @@ const isProcessing = ref(false)
 const instructionText = ref('In one sentence, what do you see?')
 const responseText = ref('')
 const intervalSelect = ref('1000')
+const isWebGPUSupported = ref(true)
 
 const loadingItems = ref<ProgressInfo[]>([])
 const loadingItemsSet = new Set<string>()
@@ -31,16 +33,6 @@ const isLoading = ref(false)
 const isDark = useDark({ disableTransition: false })
 const videoScreenContainerBounding = useElementBounding(videoScreenContainer, { immediate: true, windowResize: true })
 const { stream, start } = useUserMedia({ constraints, enabled: true, autoSwitch: true })
-
-watch([stream, videoScreen], () => {
-  if (stream.value && videoScreen.value) {
-    videoScreen.value.srcObject = stream.value
-  }
-})
-watch(selectedVideoSourceDeviceId, () => selectedVideoSourceDeviceId.value && start())
-
-onMounted(videoScreenContainerBounding.update)
-onUnmounted(() => dispose())
 
 function captureImage() {
   if (!stream || !videoScreen.value?.videoWidth || !captureCanvas.value) {
@@ -65,6 +57,12 @@ function captureImage() {
     imageHeight: frame.height,
     channels: 4 as 1 | 2 | 3 | 4,
   }
+}
+
+function checkWebGPU() {
+  check().then((result) => {
+    isWebGPUSupported.value = result.supported
+  })
 }
 
 async function sendData() {
@@ -236,6 +234,17 @@ function handleClick() {
     handleStart()
   }
 }
+
+watch([stream, videoScreen], () => {
+  if (stream.value && videoScreen.value) {
+    videoScreen.value.srcObject = stream.value
+  }
+})
+watch(selectedVideoSourceDeviceId, () => selectedVideoSourceDeviceId.value && start())
+
+onMounted(videoScreenContainerBounding.update)
+onUnmounted(() => dispose())
+onMounted(checkWebGPU)
 </script>
 
 <template>
@@ -296,8 +305,39 @@ function handleClick() {
       >
         {{ responseText }}
       </div>
-      <video ref="videoScreen" autoplay muted relative z-0 h-full w-full object-cover />
-      <canvas ref="captureCanvas" class="hidden" />
+
+      <!-- Capabilities check -->
+      <div v-if="!isSupported" absolute left-0 top-0 z-1 h-full w-full flex flex-col items-center justify-center gap-3 bg="neutral-50/20">
+        <div text="neutral-700 dark:neutral-300 4xl" font-semibold>
+          Not Supported
+        </div>
+        <div max-w="50%" text="neutral 2xl center">
+          {{ 'Browser does not support video camera. Please use a supported browser.' }}
+        </div>
+      </div>
+      <div v-else-if="!isWebGPUSupported" absolute left-0 top-0 z-1 h-full w-full flex flex-col items-center justify-center gap-3 bg="neutral-50/20">
+        <div text="neutral-700 dark:neutral-300 4xl" font-semibold>
+          Not Supported
+        </div>
+        <div max-w="50%" text="neutral 2xl center">
+          {{ 'Browser does not support WebGPU. Please use a supported browser.' }}
+        </div>
+      </div>
+      <!-- Permission check -->
+      <div v-else-if="!permissionGranted" absolute left-0 top-0 z-1 h-full w-full flex flex-col items-center justify-center gap-3 bg="orange-50/20 dark:orange-900/10">
+        <div text="orange-700 4xl" font-semibold>
+          Warning
+        </div>
+        <div max-w="50%" text="orange 2xl center">
+          {{ 'Permission not granted. Please grant permission first. Then choose a camera from the dropdown menu.' }}
+        </div>
+      </div>
+
+      <template v-else>
+        <video ref="videoScreen" autoplay muted relative z-0 h-full w-full object-cover />
+        <canvas ref="captureCanvas" class="hidden" />
+      </template>
+
       <div gap="1 sm:2" absolute bottom-0 right-0 z-10 h-full flex items-center class="max-h-12 p-2 sm:max-h-18 sm:p-4">
         <select
           v-model="selectedVideoSourceDeviceId"
