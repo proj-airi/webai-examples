@@ -14,6 +14,6 @@ withDefaults(defineProps<{
     transition="all duration-300 ease-in-out"
     h-full overflow-hidden rounded-full backdrop-blur-lg
   >
-    <div h-full bg="white dark:neutral-200" rounded-full w="[100%]" :style="{ transform: `translateX(-${Math.max(0, 100 - percentage)}%)` }" />
+    <div h-full bg="white dark:neutral-200" w="[100%]" :style="{ transform: `translateX(-${Math.max(0, 100 - percentage)}%)` }" />
   </div>
 </template>
