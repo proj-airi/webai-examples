@@ -30,18 +30,21 @@ const videoSourceDeviceId = computed<ConstrainDOMString | undefined>({
 })
 const constraints = computed(() => ({ video: { deviceId: selectedVideoSourceDeviceId.value } }))
 
+const isWebGPUSupported = ref(true)
+
 const loaded = ref(false)
 const isProcessing = ref(false)
+const isModelLoading = ref(false)
+const isWebGPULoading = ref(false)
+
 const instructionText = ref('In one sentence, what do you see?')
 const responseText = ref('')
 const intervalSelect = ref('1000')
-const isWebGPUSupported = ref(true)
 
 const loadingItems = ref<ProgressInfo[]>([])
 const loadingItemsSet = new Set<string>()
 const overallProgress = ref(0)
 const overallTotal = ref(0)
-const isLoading = ref(false)
 
 const isDark = useDark({ disableTransition: false })
 const videoScreenContainerBounding = useElementBounding(videoScreenContainer, { immediate: true, windowResize: true })
@@ -127,7 +130,7 @@ const onProgress: LoadOptionProgressCallback = async (progress) => {
 
     loadingItemsSet.add(progress.file)
     loadingItems.value.push(progress)
-    isLoading.value = true
+    isModelLoading.value = true
   }
   else if (progress.status === 'progress') {
     // Update progress for an existing file
@@ -202,13 +205,13 @@ const onProgress: LoadOptionProgressCallback = async (progress) => {
     )
 
     if (allDone) {
-      isLoading.value = false
+      isModelLoading.value = false
       // Set progress to 100% when done
       overallProgress.value = 100
     }
   }
   else if (progress.status === 'ready') {
-    isLoading.value = false
+    isModelLoading.value = false
     // Set progress to 100% when ready
     overallProgress.value = 100
   }
@@ -223,7 +226,9 @@ async function handleStart() {
   }
 
   if (!loaded.value) {
+    isWebGPULoading.value = true
     await load({ onProgress })
+    isWebGPULoading.value = false
     loaded.value = true
   }
 
@@ -297,12 +302,20 @@ onMounted(checkWebGPU)
         ]"
         @click="handleClick"
       >
-        {{ isProcessing ? 'Stop' : 'Start' }}
+        <template v-if="isProcessing">
+          Stop
+        </template>
+        <template v-else-if="isWebGPULoading || isModelLoading">
+          <div i-svg-spinners:6-dots-rotate size-4 />
+        </template>
+        <template v-else>
+          Start
+        </template>
       </button>
       <div
-        v-if="loadingItems.length > 0 && isLoading"
+        v-if="loadingItems.length > 0 && isModelLoading"
         bottom="20" left="1/2" translate-x="-50%" max-w="50"
-        absolute z-10 h-10 w-full
+        absolute z-10 h-5 w-full
       >
         <Progress :percentage="Math.min(100, overallProgress)" />
       </div>
