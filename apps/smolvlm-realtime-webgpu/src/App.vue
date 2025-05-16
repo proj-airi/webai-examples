@@ -3,7 +3,7 @@ import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } fro
 
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
-import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
 import { dispose, load, process } from './libs/vlm'
@@ -14,7 +14,20 @@ const videoScreenContainer = ref<HTMLDivElement>()
 const videoScreen = ref<HTMLVideoElement>()
 const captureCanvas = ref<HTMLCanvasElement>()
 
-const selectedVideoSourceDeviceId = toRef(() => videoInputs.value[0]?.deviceId)
+const selectedVideoSourceDeviceId = ref<ConstrainDOMString>()
+const videoSourceDeviceId = computed<ConstrainDOMString | undefined>({
+  get: () => {
+    if (!selectedVideoSourceDeviceId.value) {
+      return videoInputs.value[0]?.deviceId
+    }
+
+    return selectedVideoSourceDeviceId.value
+  },
+  set: (val) => {
+    selectedVideoSourceDeviceId.value = val
+    return selectedVideoSourceDeviceId.value
+  },
+})
 const constraints = computed(() => ({ video: { deviceId: selectedVideoSourceDeviceId.value } }))
 
 const loaded = ref(false)
@@ -340,7 +353,7 @@ onMounted(checkWebGPU)
 
       <div gap="1 sm:2" absolute bottom-0 right-0 z-10 h-full flex items-center class="max-h-12 p-2 sm:max-h-18 sm:p-4">
         <select
-          v-model="selectedVideoSourceDeviceId"
+          v-model="videoSourceDeviceId"
           bg="neutral-500/40 hover:neutral-600/40 dark:neutral-900/70 hover:dark:neutral-900/60"
           text="white/98 dark:neutral-100/90 <sm:xs"
           border="neutral-400/40 dark:neutral-500/50 1 solid"
