@@ -1,8 +1,8 @@
 {
-  "name": "@proj-airi/template_id",
+  "name": "@proj-airi/video-depth-anything-v2-realtime-webgpu",
   "type": "module",
   "private": true,
-  "description": "TEMPLATE_DESCRIPTION",
+  "description": "Yet another Realtime YOLOv9 Object Detection WebGPU",
   "author": {
     "name": "Project AIRI Team",
     "email": "airi@moeru.ai",

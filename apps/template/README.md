@@ -1,7 +1,7 @@
 <h1 align="center">TEMPLATE_NAME (Vue)</h1>
 
 <p align="center">
-  [<a href="https://TEMPLATE_ID-vue.netlify.app/">Try it</a>]
+  [<a href="https://template_id-vue.netlify.app/">Try it</a>]
 </p>
 
 > Heavily inspired by TEMPLATE_CITE
@@ -22,10 +22,10 @@ git clone https://github.com/proj-airi/webai-examples.git
 
 ### 2. Navigate to the Project Directory
 
-Change your working directory to the `TEMPLATE_ID` folder:
+Change your working directory to the `template_id` folder:
 
 ```sh
-cd apps/TEMPLATE_ID
+cd apps/template_id
 ```
 
 ### 3. Install Dependencies

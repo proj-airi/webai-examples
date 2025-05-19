@@ -1,7 +1,7 @@
 [build]
 base = "/"
-command = "pnpm -F @proj-airi/template_id... run build"
-publish = "/apps/template_id/dist"
+command = "pnpm -F @proj-airi/yolov9-realtime-webgpu... run build"
+publish = "/apps/yolov9-realtime-webgpu/dist"
 
 [build.environment]
 NODE_VERSION = "23"
