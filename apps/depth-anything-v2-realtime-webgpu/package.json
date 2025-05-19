@@ -1,8 +1,8 @@
 {
-  "name": "@proj-airi/smolvlm-realtime-webgpu",
+  "name": "@proj-airi/video-depth-anything-v2-realtime-webgpu",
   "type": "module",
   "private": true,
-  "description": "Yet another WebGPU based SmolVLM model re-implemented",
+  "description": "Yet another WebGPU based Realtime Video Depth Anything V2 re-implemented",
   "author": {
     "name": "Project AIRI Team",
     "email": "airi@moeru.ai",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "build": "vite build",
-    "dev": "vite  --port 5176",
+    "dev": "vite  --port 5177",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit"

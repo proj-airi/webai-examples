@@ -1,0 +1,13 @@
+[build]
+base = "/"
+command = "pnpm -F @proj-airi/video-depth-anything-v2-realtime-webgpu... run build"
+publish = "/apps/video-depth-anything-v2-realtime-webgpu/dist"
+
+[build.environment]
+NODE_VERSION = "23"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+force = false
