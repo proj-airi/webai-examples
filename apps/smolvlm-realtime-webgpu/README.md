@@ -22,7 +22,7 @@ git clone https://github.com/proj-airi/webai-examples.git
 
 ### 2. Navigate to the Project Directory
 
-Change your working directory to the `moonshine-web` folder:
+Change your working directory to the `smolvlm-realtime-webgpu` folder:
 
 ```sh
 cd apps/smolvlm-realtime-webgpu
