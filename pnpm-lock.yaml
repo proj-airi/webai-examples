@@ -127,8 +127,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3(magicast@0.3.5)(rollup@4.40.2)(vue@3.5.13(typescript@5.8.3))
       '@xsai-transformers/shared':
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.0.6
+        version: 0.0.6
       gpuu:
         specifier: ^1.0.3
         version: 1.0.3
@@ -1653,14 +1653,14 @@ packages:
   '@webgpu/types@0.1.60':
     resolution: {integrity: sha512-8B/tdfRFKdrnejqmvq95ogp8tf52oZ51p3f4QD5m5Paey/qlX4Rhhy5Y8tgFMi7Ms70HzcMMw3EQjH/jdhTwlA==}
 
-  '@xsai-ext/shared-providers@0.2.1':
-    resolution: {integrity: sha512-M/afqSmQmu2P7v4/A4bSL+UOC5IYIWlTfpZ5RzesCzypWzn+M4GAUlPze/et14xQr7zY/UihC5bx3diWRPnwIw==}
+  '@xsai-ext/shared-providers@0.2.2':
+    resolution: {integrity: sha512-yHQ3RQf3yb/xD5neQGFKmY/9+TmNFDZmH2aOSiS11rqAZwd6wPr/Wkvo/Ls1yiVGYVfZpzZGYp9Q+0iELt5MhA==}
 
-  '@xsai-transformers/shared@0.0.5':
-    resolution: {integrity: sha512-hXYGk/sToTdVE+IucOH+JjnrrxR+PHMdllQ/UT5WYhACA7F0HXE1vK9SzkoRBmGecYLBjryIGz8csu28yfsKzw==}
+  '@xsai-transformers/shared@0.0.6':
+    resolution: {integrity: sha512-mz/T/vmnTqOYzD1wuNNpAWBO79uLkP8hWL/toJeNMNNoQUqdCxaUz9DnCEPMcWjySnfyf/NVKUdaHiNVbRFKjg==}
 
-  '@xsai/shared@0.2.1':
-    resolution: {integrity: sha512-ddxVkwWoz2sgic8KbVSWp/1pmt3HDsSLcnAWxmI2bXvl2CHwumtMH+VqXPkLlFBdDXOpsn4T0EnoZXJeNl5uVQ==}
+  '@xsai/shared@0.2.2':
+    resolution: {integrity: sha512-bgalLd3samx36hDRRmu3M75LY5NfWwh3YRaMwY4Woy7X09JQx+vEqVpJcaIeqcmVqztm8NGYzj8hUru7lwPh0w==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -3515,6 +3515,9 @@ packages:
 
   onnxruntime-common@1.21.0:
     resolution: {integrity: sha512-Q632iLLrtCAVOTO65dh2+mNbQir/QNTVBG3h/QdZBpns7mZ0RYbLRBgGABPbpU9351AgYy7SJf1WaeVwMrBFPQ==}
+
+  onnxruntime-common@1.22.0:
+    resolution: {integrity: sha512-vcuaNWgtF2dGQu/EP5P8UI5rEPEYqXG2sPPe5j9lg2TY/biJF8eWklTMwlDO08iuXq48xJo0awqIpK5mPG+IxA==}
 
   onnxruntime-common@1.22.0-dev.20250409-89f8206ba4:
     resolution: {integrity: sha512-vDJMkfCfb0b1A836rgHj+ORuZf4B4+cc2bASQtpeoJLueuFc5DuYwjIZUBrSvx/fO5IrLjLz+oTrB3pcGlhovQ==}
@@ -6237,19 +6240,19 @@ snapshots:
 
   '@webgpu/types@0.1.60': {}
 
-  '@xsai-ext/shared-providers@0.2.1':
+  '@xsai-ext/shared-providers@0.2.2':
     dependencies:
-      '@xsai/shared': 0.2.1
+      '@xsai/shared': 0.2.2
 
-  '@xsai-transformers/shared@0.0.5':
+  '@xsai-transformers/shared@0.0.6':
     dependencies:
       '@huggingface/transformers': 3.5.1
-      '@xsai-ext/shared-providers': 0.2.1
-      '@xsai/shared': 0.2.1
+      '@xsai-ext/shared-providers': 0.2.2
+      '@xsai/shared': 0.2.2
       defu: 6.1.4
-      onnxruntime-common: 1.21.0
+      onnxruntime-common: 1.22.0
 
-  '@xsai/shared@0.2.1': {}
+  '@xsai/shared@0.2.2': {}
 
   accepts@2.0.0:
     dependencies:
@@ -8534,6 +8537,8 @@ snapshots:
       mimic-function: 5.0.1
 
   onnxruntime-common@1.21.0: {}
+
+  onnxruntime-common@1.22.0: {}
 
   onnxruntime-common@1.22.0-dev.20250409-89f8206ba4: {}
 

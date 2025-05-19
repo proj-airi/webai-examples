@@ -1,14 +1,18 @@
 /* eslint-disable no-restricted-globals */
 import type { PreTrainedModel, Processor, ProgressInfo, Tensor } from '@huggingface/transformers'
-import type { WorkerMessageEvent } from './types'
+import type { LoadMessageEvents, ProcessMessageEvents, WorkerMessageEvent } from '@xsai-transformers/shared/worker'
+import type { Load, Process } from './vlm'
 
 import { AutoModelForVision2Seq, AutoProcessor, RawImage } from '@huggingface/transformers'
 import { isWebGPUSupported } from 'gpuu/webgpu'
 
-import { MessageStatus } from './types'
-
 let processor: Processor
 let model: PreTrainedModel
+
+export enum MessageStatus {
+  Loading = 'loading',
+  Ready = 'ready',
+}
 
 async function process(instruction: string, imageBuffer: Uint8ClampedArray | Uint8Array, imageWidth: number, imageHeight: number, channels: 1 | 2 | 3 | 4) {
   const messages = [{
@@ -42,19 +46,19 @@ async function process(instruction: string, imageBuffer: Uint8ClampedArray | Uin
       output: { data: output?.[0]?.trim() || '' },
     },
     type: 'processResult',
-  } satisfies WorkerMessageEvent)
+  } satisfies ProcessMessageEvents)
 }
 
 async function load(modelId: string) {
   try {
     const device = (await isWebGPUSupported()) ? 'webgpu' : 'wasm'
 
-    self.postMessage({ data: { message: `Using device: "${device}"` }, type: 'info' } satisfies WorkerMessageEvent)
-    self.postMessage({ data: { message: 'Loading models...' }, type: 'info' } satisfies WorkerMessageEvent)
+    self.postMessage({ data: { message: `Using device: "${device}"` }, type: 'info' } satisfies LoadMessageEvents)
+    self.postMessage({ data: { message: 'Loading models...' }, type: 'info' } satisfies LoadMessageEvents)
 
     processor = await AutoProcessor.from_pretrained(modelId, {
       progress_callback: (progress: ProgressInfo) => {
-        self.postMessage({ data: { progress }, type: 'progress' } satisfies WorkerMessageEvent)
+        self.postMessage({ data: { progress }, type: 'progress' } satisfies LoadMessageEvents)
       },
     })
 
@@ -66,19 +70,19 @@ async function load(modelId: string) {
       },
       device,
       progress_callback: (progress) => {
-        self.postMessage({ data: { progress }, type: 'progress' } satisfies WorkerMessageEvent)
+        self.postMessage({ data: { progress }, type: 'progress' } satisfies LoadMessageEvents)
       },
     })
 
-    self.postMessage({ data: { message: 'Ready!', status: MessageStatus.Ready }, type: 'status' } satisfies WorkerMessageEvent)
+    self.postMessage({ data: { message: 'Ready!', status: MessageStatus.Ready }, type: 'status' } satisfies LoadMessageEvents)
   }
   catch (err) {
-    self.postMessage({ data: { error: err }, type: 'error' } satisfies WorkerMessageEvent)
+    self.postMessage({ data: { error: err }, type: 'error' } satisfies LoadMessageEvents)
     throw err
   }
 }
 
-self.addEventListener('message', (event: MessageEvent<WorkerMessageEvent>) => {
+self.addEventListener('message', (event: MessageEvent<WorkerMessageEvent<Load, 'load'> | WorkerMessageEvent<Process, 'process'>>) => {
   const { type } = event.data
 
   switch (type) {

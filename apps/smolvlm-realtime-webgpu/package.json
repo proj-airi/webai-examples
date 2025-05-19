@@ -20,7 +20,7 @@
     "@unocss/reset": "^66.1.1",
     "@vueuse/core": "^13.2.0",
     "@vueuse/motion": "^3.0.3",
-    "@xsai-transformers/shared": "^0.0.5",
+    "@xsai-transformers/shared": "^0.0.6",
     "gpuu": "^1.0.3",
     "hfup": "^0.5.0",
     "ofetch": "^1.4.1",

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } from '@xsai-transformers/shared/types'
+import type { VLMWorker } from './libs/vlm'
 
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
-import { dispose, load, process } from './libs/vlm'
+import { createVLMWorker } from './libs/vlm'
+import workerURL from './libs/worker?worker&url'
 
 const { videoInputs, permissionGranted, isSupported } = useDevicesList({ constraints: { video: true, audio: false }, requestPermissions: true })
 
@@ -45,6 +47,8 @@ const loadingItems = ref<ProgressInfo[]>([])
 const loadingItemsSet = new Set<string>()
 const overallProgress = ref(0)
 const overallTotal = ref(0)
+
+const vlmWorker = ref<VLMWorker>()
 
 const isDark = useDark({ disableTransition: false })
 const videoScreenContainerBounding = useElementBounding(videoScreenContainer, { immediate: true, windowResize: true })
@@ -91,7 +95,7 @@ async function sendData() {
     return
   }
   try {
-    const response = await process({
+    const response = await vlmWorker.value?.process({
       instruction,
       imageBuffer: rawImg.imageBuffer,
       imageWidth: rawImg.imageWidth,
@@ -99,7 +103,7 @@ async function sendData() {
       channels: rawImg.channels,
     })
 
-    responseText.value = response.data ?? ''
+    responseText.value = response ?? ''
   }
   catch (e) {
     console.error(e)
@@ -227,7 +231,7 @@ async function handleStart() {
 
   if (!loaded.value) {
     isWebGPULoading.value = true
-    await load({ onProgress })
+    await vlmWorker.value?.load({ onProgress })
     isWebGPULoading.value = false
     loaded.value = true
   }
@@ -260,8 +264,9 @@ watch([stream, videoScreen], () => {
 })
 watch(selectedVideoSourceDeviceId, () => selectedVideoSourceDeviceId.value && start())
 
+onMounted(() => vlmWorker.value = createVLMWorker({ baseURL: workerURL }))
 onMounted(videoScreenContainerBounding.update)
-onUnmounted(() => dispose())
+onUnmounted(() => vlmWorker.value?.dispose())
 onMounted(checkWebGPU)
 </script>
 
