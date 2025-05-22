@@ -17,13 +17,13 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@tresjs/core": "^4.3.4",
-    "@unocss/reset": "^66.1.1",
+    "@tresjs/core": "^4.3.5",
+    "@unocss/reset": "^66.1.2",
     "@vueuse/core": "^13.2.0",
     "@vueuse/motion": "^3.0.3",
     "hfup": "^0.5.0",
     "three": "^0.176.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.14"
   },
   "devDependencies": {
     "@huggingface/transformers": "^3.5.1",
