@@ -42,7 +42,7 @@ const isWebGPULoading = ref(false)
 
 const instructionText = ref('In one sentence, what do you see?')
 const responseText = ref('')
-const intervalSelect = ref('1000')
+const intervalSelect = ref('500')
 
 const loadingItems = ref<ProgressInfo[]>([])
 const loadingItemsSet = new Set<string>()
@@ -61,8 +61,10 @@ function captureImage() {
     return null
   }
 
-  captureCanvas.value.width = videoScreen.value?.videoWidth
-  captureCanvas.value.height = videoScreen.value?.videoHeight
+  const { width, height } = videoScreen.value?.getBoundingClientRect()
+  captureCanvas.value.width = width
+  captureCanvas.value.height = height
+
   const context = captureCanvas.value.getContext('2d', { willReadFrequently: true })
   if (!context) {
     console.warn('Canvas context not ready for capture.')
