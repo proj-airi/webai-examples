@@ -1,7 +1,7 @@
 <h1 align="center">Realtime YOLOv9 Object Detection WebGPU (Vue)</h1>
 
 <p align="center">
-  [<a href="https://yolov9-realtime-webgpu-vue.netlify.app/">Try it</a>]
+  [<a href="https://yolov9-object-detection-realtime-webgpu-vue.netlify.app/">Try it</a>]
 </p>
 
 > Heavily inspired by [WebGPU Video Object Detection - a Hugging Face Space by Xenova](https://huggingface.co/spaces/Xenova/webgpu-video-object-detection)
@@ -22,10 +22,10 @@ git clone https://github.com/proj-airi/webai-examples.git
 
 ### 2. Navigate to the Project Directory
 
-Change your working directory to the `yolov9-realtime-webgpu` folder:
+Change your working directory to the `yolov9-object-detection-realtime-webgpu` folder:
 
 ```sh
-cd apps/yolov9-realtime-webgpu
+cd apps/yolov9-object-detection-realtime-webgpu
 ```
 
 ### 3. Install Dependencies

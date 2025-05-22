@@ -154,5 +154,7 @@ words:
   - xsai
   - xsschema
   - zhipu
+  - yolo
+  - yolov9
 ignoreWords: []
 import: []

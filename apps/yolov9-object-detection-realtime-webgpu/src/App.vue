@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } from '@xsai-transformers/shared/types'
-import type { VLMWorker } from './libs/vlm'
+import type { ObjectDetectionPipelineSingle } from '@huggingface/transformers'
 
 import { sleep } from '@moeru/std/sleep'
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
-import { createVLMWorker } from './libs/vlm'
-import workerURL from './libs/worker?worker&url'
+import { useTransformersWorker } from './composables/use-transformers-worker'
+import workerURL from './workers/yolov9-worker?worker&url'
 
 const { videoInputs, permissionGranted, isSupported } = useDevicesList({ constraints: { video: true, audio: false }, requestPermissions: true })
 
@@ -31,29 +30,67 @@ const videoSourceDeviceId = computed<ConstrainDOMString | undefined>({
     return selectedVideoSourceDeviceId.value
   },
 })
+
+const borderColorSets = [
+  'border-sky-500',
+  'border-blue-500',
+  'border-indigo-500',
+  'border-violet-500',
+  'border-purple-500',
+  'border-fuchsia-500',
+  'border-pink-500',
+  'border-rose-500',
+  'border-red-500',
+  'border-orange-500',
+  'border-amber-500',
+  'border-yellow-500',
+  'border-lime-500',
+  'border-green-500',
+  'border-teal-500',
+  'border-cyan-500',
+]
+
+const bgColorSets = [
+  'bg-sky-500',
+  'bg-blue-500',
+  'bg-indigo-500',
+  'bg-violet-500',
+  'bg-purple-500',
+  'bg-fuchsia-500',
+  'bg-pink-500',
+  'bg-rose-500',
+  'bg-red-500',
+  'bg-orange-500',
+  'bg-amber-500',
+  'bg-yellow-500',
+  'bg-lime-500',
+  'bg-green-500',
+  'bg-teal-500',
+  'bg-cyan-500',
+]
+
 const constraints = computed(() => ({ video: { deviceId: selectedVideoSourceDeviceId.value } }))
 
-const isWebGPUSupported = ref(true)
+const intervalSelect = ref('5')
 
 const loaded = ref(false)
 const isProcessing = ref(false)
-const isModelLoading = ref(false)
 const isWebGPULoading = ref(false)
-
-const instructionText = ref('In one sentence, what do you see?')
-const responseText = ref('')
-const intervalSelect = ref('1000')
-
-const loadingItems = ref<ProgressInfo[]>([])
-const loadingItemsSet = new Set<string>()
-const overallProgress = ref(0)
-const overallTotal = ref(0)
-
-const vlmWorker = ref<VLMWorker>()
+const isWebGPUSupported = ref(true)
 
 const isDark = useDark({ disableTransition: false })
 const videoScreenContainerBounding = useElementBounding(videoScreenContainer, { immediate: true, windowResize: true })
 const { stream, start } = useUserMedia({ constraints, enabled: true, autoSwitch: true })
+
+const { isLoading, load, loadingItems, process, overallProgress } = useTransformersWorker(workerURL, 'object-detection')
+
+const detectedObjects = ref<ObjectDetectionPipelineSingle[]>([])
+
+function checkWebGPU() {
+  check().then((result) => {
+    isWebGPUSupported.value = result.supported
+  })
+}
 
 function captureImage() {
   if (!stream || !videoScreen.value?.videoWidth || !captureCanvas.value) {
@@ -61,8 +98,10 @@ function captureImage() {
     return null
   }
 
-  captureCanvas.value.width = videoScreen.value?.videoWidth
-  captureCanvas.value.height = videoScreen.value?.videoHeight
+  const { width, height } = videoScreen.value?.getBoundingClientRect()
+  captureCanvas.value.width = width
+  captureCanvas.value.height = height
+
   const context = captureCanvas.value.getContext('2d', { willReadFrequently: true })
   if (!context) {
     console.warn('Canvas context not ready for capture.')
@@ -80,35 +119,41 @@ function captureImage() {
   }
 }
 
-function checkWebGPU() {
-  check().then((result) => {
-    isWebGPUSupported.value = result.supported
-  })
-}
-
 async function sendData() {
   if (!isProcessing.value)
     return
-  const instruction = instructionText.value
   const rawImg = captureImage()
   if (!rawImg) {
-    responseText.value = 'Capture failed'
+    // TODO: display error message
     return
   }
   try {
-    const response = await vlmWorker.value?.process({
-      instruction,
+    const response = await process({
       imageBuffer: rawImg.imageBuffer,
       imageWidth: rawImg.imageWidth,
       imageHeight: rawImg.imageHeight,
       channels: rawImg.channels,
     })
-
-    responseText.value = response ?? ''
+    // TODO: display detected result
+    if (response && response.length > 0) {
+      detectedObjects.value = response.map(item => ({
+        box: {
+          xmin: item.box.xmin,
+          ymin: item.box.ymin,
+          xmax: item.box.xmax,
+          ymax: item.box.ymax,
+        },
+        label: item.label,
+        score: item.score,
+      }))
+    }
+    else {
+      detectedObjects.value = []
+    }
   }
   catch (e) {
     console.error(e)
-    responseText.value = `Error: ${e instanceof Error ? e.message : 'Unknown error'}`
+    // TODO: display error message
   }
 }
 
@@ -122,105 +167,9 @@ async function processingLoop() {
   }
 }
 
-const onProgress: LoadOptionProgressCallback = async (progress) => {
-  if (progress.status === 'initiate') {
-    // New file discovered
-    if (loadingItemsSet.has(progress.file)) {
-      return
-    }
-
-    loadingItemsSet.add(progress.file)
-    loadingItems.value.push(progress)
-    isModelLoading.value = true
-  }
-  else if (progress.status === 'progress') {
-    // Update progress for an existing file
-    const itemIndex = loadingItems.value.findIndex((item: unknown) => {
-      return (item as ProgressStatusInfo).file === progress.file
-    })
-
-    if (itemIndex >= 0) {
-      // Update the item in the array
-      loadingItems.value[itemIndex] = progress
-
-      // Now recalculate the overall progress
-
-      // First, calculate the total expected size of all known files
-      let newTotalSize = 0
-      let newLoadedSize = 0
-
-      for (const item of loadingItems.value) {
-        if ('total' in item && item.total) {
-          newTotalSize += item.total
-
-          if ('loaded' in item && item.loaded) {
-            newLoadedSize += item.loaded
-          }
-        }
-      }
-
-      // Update the total size tracker
-      overallTotal.value = newTotalSize
-
-      // Calculate overall progress as a percentage
-      if (newTotalSize > 0) {
-        overallProgress.value = (newLoadedSize / newTotalSize) * 100
-      }
-    }
-    else {
-      // This is a progress update for a file we haven't seen before
-      loadingItems.value.push(progress)
-
-      // Recalculate total (same as above)
-      let newTotalSize = 0
-      let newLoadedSize = 0
-
-      for (const item of loadingItems.value) {
-        if ('total' in item && item.total) {
-          newTotalSize += item.total
-
-          if ('loaded' in item && item.loaded) {
-            newLoadedSize += item.loaded
-          }
-        }
-      }
-
-      overallTotal.value = newTotalSize
-
-      if (newTotalSize > 0) {
-        overallProgress.value = (newLoadedSize / newTotalSize) * 100
-      }
-    }
-  }
-  else if (progress.status === 'done') {
-    const itemIndex = loadingItems.value.findIndex((item: unknown) => {
-      return (item as ProgressStatusInfo).file === progress.file
-    })
-
-    if (itemIndex >= 0) {
-      loadingItems.value[itemIndex] = progress
-    }
-
-    const allDone = loadingItems.value.every(item =>
-      item.status === 'done' || item.status === 'ready',
-    )
-
-    if (allDone) {
-      isModelLoading.value = false
-      // Set progress to 100% when done
-      overallProgress.value = 100
-    }
-  }
-  else if (progress.status === 'ready') {
-    isModelLoading.value = false
-    // Set progress to 100% when ready
-    overallProgress.value = 100
-  }
-}
-
 async function handleStart() {
   if (!stream) {
-    responseText.value = 'Camera not available. Cannot start.'
+    // TODO: ?
     // eslint-disable-next-line no-alert
     alert('Camera not available. Please grant permission first.')
     return
@@ -228,21 +177,21 @@ async function handleStart() {
 
   if (!loaded.value) {
     isWebGPULoading.value = true
-    await vlmWorker.value?.load({ onProgress })
+    await load()
     isWebGPULoading.value = false
     loaded.value = true
   }
 
   isProcessing.value = true
-  responseText.value = '...'
+  // TODO: ?
   processingLoop()
 }
 
 function handleStop() {
   isProcessing.value = false
-  if (responseText.value === '...') {
-    responseText.value = ''
-  }
+  // if (responseText.value === '...') {
+  //   responseText.value = ''
+  // }
 }
 
 function handleClick() {
@@ -261,10 +210,8 @@ watch([stream, videoScreen], () => {
 })
 watch(selectedVideoSourceDeviceId, () => selectedVideoSourceDeviceId.value && start())
 
-onMounted(() => vlmWorker.value = createVLMWorker({ baseURL: workerURL }))
 onMounted(videoScreenContainerBounding.update)
 onMounted(checkWebGPU)
-onUnmounted(() => vlmWorker.value?.dispose())
 </script>
 
 <template>
@@ -279,11 +226,11 @@ onUnmounted(() => vlmWorker.value?.dispose())
           transition="all duration-300 ease-in-out"
         >
           <div>
-            SmolVLM Realtime WebGPU (Vue)
+            YOLOv9 Object Detection Realtime WebGPU (Vue)
           </div>
         </div>
         <a
-          href="https://github.com/proj-airi/webai-examples/tree/main/apps/smolvlm-realtime-webgpu"
+          href="https://github.com/proj-airi/webai-examples/tree/main/apps/yolov9-object-detection-realtime-webgpu"
           bg="white dark:neutral-900 hover:neutral-100 dark:hover:neutral-800"
           border="neutral-400/40 dark:neutral-500/50 1 solid"
           class="rounded-xl p-2 text-black sm:rounded-2xl sm:px-3 sm:py-2 dark:text-white"
@@ -307,7 +254,7 @@ onUnmounted(() => vlmWorker.value?.dispose())
         <template v-if="isProcessing">
           Stop
         </template>
-        <template v-else-if="isWebGPULoading || isModelLoading">
+        <template v-else-if="isWebGPULoading || isLoading">
           <div i-svg-spinners:6-dots-rotate size-4 />
         </template>
         <template v-else>
@@ -315,23 +262,34 @@ onUnmounted(() => vlmWorker.value?.dispose())
         </template>
       </button>
       <div
-        v-if="loadingItems.length > 0 && isModelLoading"
+        v-if="loadingItems.length > 0 && isLoading"
         bottom="20" left="1/2" translate-x="-50%" max-w="50"
         absolute z-10 h-5 w-full
       >
         <Progress :percentage="Math.min(100, overallProgress)" />
       </div>
+
       <div
-        v-if="responseText"
-        translate-x="-50%" absolute bottom="20" left="1/2" z-10
-        bg="neutral-700/60 dark:neutral-900/90"
-        text="white/98 dark:neutral-100/90 <sm:xs"
-        border="neutral-400/40 dark:neutral-500/50 1 solid"
-        transition="all duration-300 ease-in-out"
-        class="rounded-xl px-2 py-1 sm:rounded-2xl sm:px-3 sm:py-2"
-        backdrop-blur-lg
+        v-for="(item, index) in detectedObjects" :key="index"
+        fixed
+        :style="{
+          top: `${item.box.ymin}px`,
+          left: `${item.box.xmin}px`,
+          width: `${item.box.xmax - item.box.xmin}px`,
+          height: `${item.box.ymax - item.box.ymin}px`,
+          zIndex: 100 + 100 * index,
+        }"
+        class="box-content border-4 rounded-lg"
+        :class="[
+          borderColorSets[index % borderColorSets.length],
+        ]"
       >
-        {{ responseText }}
+        <div
+          px-2 pb-2 pt-1 text-white font-mono
+          :class="[bgColorSets[index % bgColorSets.length]]"
+        >
+          {{ item.label }} ({{ item.score.toFixed(2) }})
+        </div>
       </div>
 
       <!-- Capabilities check -->
@@ -362,8 +320,8 @@ onUnmounted(() => vlmWorker.value?.dispose())
       </div>
 
       <template v-else>
-        <video ref="videoScreen" autoplay muted relative z-0 h-full w-full object-cover />
         <canvas ref="captureCanvas" class="hidden" />
+        <video ref="videoScreen" autoplay muted relative z-0 h-full w-full object-cover />
       </template>
 
       <div gap="1 sm:2" absolute bottom-0 right-0 z-10 h-full flex items-center class="max-h-12 p-2 sm:max-h-18 sm:p-4">
@@ -406,20 +364,3 @@ onUnmounted(() => vlmWorker.value?.dispose())
     </div>
   </div>
 </template>
-
-<style>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease-in-out;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0.5;
-}
-
-.fade-enter-to,
-.fade-leave-from {
-  opacity: 1;
-}
-</style>

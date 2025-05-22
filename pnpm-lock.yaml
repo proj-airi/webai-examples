@@ -269,7 +269,7 @@ importers:
         specifier: ^2.2.10
         version: 2.2.10(typescript@5.8.3)
 
-  apps/yolov9-realtime-webgpu:
+  apps/yolov9-object-detection-realtime-webgpu:
     dependencies:
       '@unocss/reset':
         specifier: ^66.1.1
@@ -302,6 +302,9 @@ importers:
       '@iconify-json/svg-spinners':
         specifier: ^1.2.2
         version: 1.2.2
+      '@moeru/std':
+        specifier: 0.1.0-beta.1
+        version: 0.1.0-beta.1
       '@vitejs/plugin-vue':
         specifier: ^5.2.4
         version: 5.2.4(vite@6.3.5(@types/node@22.15.18)(jiti@2.4.2)(less@4.2.1)(terser@5.17.6)(tsx@4.19.3)(yaml@2.7.1))(vue@3.5.13(typescript@5.8.3))
@@ -1079,6 +1082,9 @@ packages:
   '@modelcontextprotocol/sdk@1.11.1':
     resolution: {integrity: sha512-9LfmxKTb1v+vUS1/emSk1f5ePmTLkb9Le9AxOB5T0XM59EUumwcS45z05h7aiZx3GI0Bl7mjb3FMEglYj+acuQ==}
     engines: {node: '>=18'}
+
+  '@moeru/std@0.1.0-beta.1':
+    resolution: {integrity: sha512-ImfoMBchZP+F4aos2nFmlcipcgIhT+ZkUUVWB/bBHEqyB/w/nbI/xgA8a1ibJUtG7RcQnQH+SKom0r4/1xCWqA==}
 
   '@mswjs/interceptors@0.37.6':
     resolution: {integrity: sha512-wK+5pLK5XFmgtH3aQ2YVvA3HohS3xqV/OxuVOdNx9Wpnz7VE/fnC+e1A7ln6LFYeck7gOJ/dsZV6OLplOtAJ2w==}
@@ -5520,6 +5526,8 @@ snapshots:
       zod-to-json-schema: 3.24.5(zod@3.24.4)
     transitivePeerDependencies:
       - supports-color
+
+  '@moeru/std@0.1.0-beta.1': {}
 
   '@mswjs/interceptors@0.37.6':
     dependencies:
