@@ -28,7 +28,7 @@ jobs:
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
 
       - run: |-
-          git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/moeru-ai/yolov9-od-realtime-webgpu-vue --depth 1 apps/smolvlm-realtime-webgpu/dist
+          git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/moeru-ai/yolov9-od-realtime-webgpu-vue --depth 1 apps/yolov9-od-realtime-webgpu/dist
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
