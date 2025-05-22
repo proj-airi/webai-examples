@@ -1,0 +1,13 @@
+[build]
+base = "/"
+command = "pnpm -F @proj-airi/yolov9-od-realtime-webgpu... run build"
+publish = "/apps/yolov9-od-realtime-webgpu/dist"
+
+[build.environment]
+NODE_VERSION = "23"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+force = false

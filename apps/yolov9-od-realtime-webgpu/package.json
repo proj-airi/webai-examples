@@ -1,5 +1,5 @@
 {
-  "name": "@proj-airi/yolov9-object-detection-realtime-webgpu",
+  "name": "@proj-airi/yolov9-od-realtime-webgpu",
   "type": "module",
   "private": true,
   "description": "Yet another Realtime YOLOv9 Object Detection WebGPU",

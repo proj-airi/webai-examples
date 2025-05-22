@@ -269,7 +269,7 @@ importers:
         specifier: ^2.2.10
         version: 2.2.10(typescript@5.8.3)
 
-  apps/yolov9-object-detection-realtime-webgpu:
+  apps/yolov9-od-realtime-webgpu:
     dependencies:
       '@unocss/reset':
         specifier: ^66.1.1

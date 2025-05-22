@@ -230,7 +230,7 @@ onMounted(checkWebGPU)
           </div>
         </div>
         <a
-          href="https://github.com/proj-airi/webai-examples/tree/main/apps/yolov9-object-detection-realtime-webgpu"
+          href="https://github.com/proj-airi/webai-examples/tree/main/apps/yolov9-od-realtime-webgpu"
           bg="white dark:neutral-900 hover:neutral-100 dark:hover:neutral-800"
           border="neutral-400/40 dark:neutral-500/50 1 solid"
           class="rounded-xl p-2 text-black sm:rounded-2xl sm:px-3 sm:py-2 dark:text-white"
