@@ -35,16 +35,7 @@ async function process(instruction: string, imageBuffer: Uint8ClampedArray | Uin
   )
 
   self.postMessage({
-    data: {
-      input: {
-        instruction,
-        imageBuffer,
-        imageWidth,
-        imageHeight,
-        channels,
-      },
-      output: { data: output?.[0]?.trim() || '' },
-    },
+    data: { data: output?.[0]?.trim() || '' },
     type: 'processResult',
   } satisfies ProcessMessageEvents)
 }

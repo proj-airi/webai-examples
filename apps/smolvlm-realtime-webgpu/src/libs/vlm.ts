@@ -11,16 +11,7 @@ export interface Process {
 }
 
 export interface ProcessResult {
-  input: {
-    instruction: string
-    imageBuffer: Uint8ClampedArray | Uint8Array
-    imageWidth: number
-    imageHeight: number
-    channels: 1 | 2 | 3 | 4
-  }
-  output: {
-    data: string
-  }
+  data: string
 }
 
 export interface Load<T = object> {
@@ -47,7 +38,7 @@ export function createVLMWorker<
 
   const process = async (process: Process) => {
     const res = await worker.process<Process, ProcessResult>({ data: process, type: 'process' }, 'processResult')
-    return res.output.data
+    return res.data
   }
 
   return {

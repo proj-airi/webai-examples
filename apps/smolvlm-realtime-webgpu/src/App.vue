@@ -2,12 +2,12 @@
 import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } from '@xsai-transformers/shared/types'
 import type { VLMWorker } from './libs/vlm'
 
-import { sleep } from '@moeru/std/sleep'
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
+import Range from './components/Range.vue'
 import { createVLMWorker } from './libs/vlm'
 import workerURL from './libs/worker?worker&url'
 
@@ -42,7 +42,16 @@ const isWebGPULoading = ref(false)
 
 const instructionText = ref('In one sentence, what do you see?')
 const responseText = ref('')
-const intervalSelect = ref('500')
+
+// Performance controls
+const scale = ref(0.3) // Camera stream scale factor (smaller = faster)
+const maxImageSize = ref(224) // Maximum image dimension for processing
+const processingInterval = ref(2000) // Minimum time between processing (ms)
+
+// Performance monitoring
+const fpsCounter = ref(0)
+const lastFrameTime = ref(0)
+const processingTime = ref(0)
 
 const loadingItems = ref<ProgressInfo[]>([])
 const loadingItemsSet = new Set<string>()
@@ -61,9 +70,33 @@ function captureImage() {
     return null
   }
 
-  const { width, height } = videoScreen.value?.getBoundingClientRect()
-  captureCanvas.value.width = width
-  captureCanvas.value.height = height
+  // Apply scale to reduce processing load
+  const videoElement = videoScreen.value
+  const originalWidth = videoElement.videoWidth
+  const originalHeight = videoElement.videoHeight
+
+  // Calculate scaled dimensions
+  const scaledWidth = Math.round(originalWidth * scale.value)
+  const scaledHeight = Math.round(originalHeight * scale.value)
+
+  // Further limit by maxImageSize to control model input
+  const aspectRatio = originalWidth / originalHeight
+  let finalWidth = scaledWidth
+  let finalHeight = scaledHeight
+
+  if (Math.max(scaledWidth, scaledHeight) > maxImageSize.value) {
+    if (scaledWidth > scaledHeight) {
+      finalWidth = maxImageSize.value
+      finalHeight = Math.round(maxImageSize.value / aspectRatio)
+    }
+    else {
+      finalHeight = maxImageSize.value
+      finalWidth = Math.round(maxImageSize.value * aspectRatio)
+    }
+  }
+
+  captureCanvas.value.width = finalWidth
+  captureCanvas.value.height = finalHeight
 
   const context = captureCanvas.value.getContext('2d', { willReadFrequently: true })
   if (!context) {
@@ -71,8 +104,8 @@ function captureImage() {
     return null
   }
 
-  context.drawImage(videoScreen.value, 0, 0, captureCanvas.value.width, captureCanvas.value.height)
-  const frame = context.getImageData(0, 0, captureCanvas.value.width, captureCanvas.value.height)
+  context.drawImage(videoElement, 0, 0, finalWidth, finalHeight)
+  const frame = context.getImageData(0, 0, finalWidth, finalHeight)
 
   return {
     imageBuffer: frame.data,
@@ -91,13 +124,16 @@ function checkWebGPU() {
 async function sendData() {
   if (!isProcessing.value)
     return
+
   const instruction = instructionText.value
   const rawImg = captureImage()
   if (!rawImg) {
     responseText.value = 'Capture failed'
     return
   }
+
   try {
+    const startTime = performance.now()
     const response = await vlmWorker.value?.process({
       instruction,
       imageBuffer: rawImg.imageBuffer,
@@ -105,6 +141,15 @@ async function sendData() {
       imageHeight: rawImg.imageHeight,
       channels: rawImg.channels,
     })
+    const endTime = performance.now()
+
+    // Calculate processing time and FPS
+    processingTime.value = Math.round(endTime - startTime)
+    if (lastFrameTime.value) {
+      const frameTime = endTime - lastFrameTime.value
+      fpsCounter.value = Math.round(1000 / frameTime * 100) / 100 // 2 decimal places
+    }
+    lastFrameTime.value = endTime
 
     responseText.value = response ?? ''
   }
@@ -114,13 +159,34 @@ async function sendData() {
   }
 }
 
-async function processingLoop() {
-  const intervalMs = Number.parseInt(intervalSelect.value, 10)
-  while (isProcessing.value) {
-    await sendData()
-    if (!isProcessing.value)
-      break
-    await sleep(intervalMs)
+let animationFrameId: number | null = null
+let lastProcessTime = 0
+
+function processingLoop() {
+  if (!isProcessing.value) {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+    }
+    return
+  }
+
+  const now = performance.now()
+
+  // Only process if enough time has passed (respecting processingInterval)
+  if (now - lastProcessTime >= processingInterval.value) {
+    lastProcessTime = now
+    sendData().finally(() => {
+      if (isProcessing.value) {
+        animationFrameId = requestAnimationFrame(processingLoop)
+      }
+    })
+  }
+  else {
+    // Schedule next check
+    if (isProcessing.value) {
+      animationFrameId = requestAnimationFrame(processingLoop)
+    }
   }
 }
 
@@ -223,8 +289,7 @@ const onProgress: LoadOptionProgressCallback = async (progress) => {
 async function handleStart() {
   if (!stream) {
     responseText.value = 'Camera not available. Cannot start.'
-    // eslint-disable-next-line no-alert
-    alert('Camera not available. Please grant permission first.')
+    console.warn('Camera not available. Please grant permission first.')
     return
   }
 
@@ -242,6 +307,10 @@ async function handleStart() {
 
 function handleStop() {
   isProcessing.value = false
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
   if (responseText.value === '...') {
     responseText.value = ''
   }
@@ -295,6 +364,101 @@ onUnmounted(() => vlmWorker.value?.dispose())
           <div i-simple-icons:github class="size-4" />
         </a>
       </div>
+
+      <!-- Performance Monitor -->
+      <div
+        absolute left-4 top-16 z-10
+        bg="white/80 dark:neutral-900/80"
+        text="black dark:white <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
+        transition="all duration-300 ease-in-out"
+        flex gap-2
+      >
+        <span>FPS: <span font-mono>{{ fpsCounter }}</span></span>
+        <span>Time: <span font-mono>{{ processingTime }} ms</span></span>
+      </div>
+
+      <!-- Control Panel -->
+      <div
+
+        bg="neutral-500/40 dark:neutral-900/70"
+        text="white/98 dark:neutral-100/90 <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:pb-1 sm:pt-2"
+        transition="all duration-300 ease-in-out"
+        min-w="280px"
+        grid-cols="[0.2fr_0.4fr_1fr]" absolute bottom-16 right-4 z-10 grid items-center gap-x-2 gap-y-1 text-sm
+      >
+        <!-- Image Scale Control -->
+        <div>Scale:</div>
+        <label for="scale" w="90px" flex items-center gap-2>
+          <Range
+            v-model="scale"
+            :min="0.1"
+            :max="1.0"
+            :step="0.1"
+            :disabled="isProcessing"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ scale.toFixed(1) }}
+        </div>
+
+        <!-- Max Image Size Control -->
+        <div>Max Size:</div>
+        <label for="max-size" w="90px" flex items-center gap-2>
+          <Range
+            v-model="maxImageSize"
+            :min="128"
+            :max="512"
+            :step="32"
+            :disabled="isProcessing"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ maxImageSize }}
+        </div>
+
+        <!-- Processing Interval Control -->
+        <div>Interval:</div>
+        <label for="interval" w="90px" flex items-center gap-2>
+          <Range
+            v-model="processingInterval"
+            :min="500"
+            :max="5000"
+            :step="250"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ (processingInterval / 1000).toFixed(1) }}s
+        </div>
+
+        <!-- Instruction Input -->
+        <div min-w-20>
+          Ask:
+        </div>
+        <label for="instruction" col-span-2 w-full flex items-center gap-2>
+          <input
+            v-model="instructionText"
+            placeholder="What do you see?"
+            type="text"
+            :disabled="isProcessing"
+            border="focus:neutral-400 dark:focus:neutral-500 2 focus:2 solid neutral-500/50 dark:neutral-900"
+            transition="all duration-200 ease-in-out"
+            cursor="disabled:not-allowed"
+            shadow="sm"
+            w-full flex-1 rounded-lg px-2 py-1 text-nowrap text-sm outline-none
+            bg="neutral-700/50 dark:neutral-950 focus:neutral-700/50 dark:focus:neutral-900"
+            text="disabled:neutral-400 dark:disabled:neutral-600"
+          >
+        </label>
+        <div />
+      </div>
+
       <button
         text="white/98 dark:neutral-100/90 <sm:xs"
         border="neutral-400/40 dark:neutral-500/50 1 solid"
@@ -332,6 +496,7 @@ onUnmounted(() => vlmWorker.value?.dispose())
         transition="all duration-300 ease-in-out"
         class="rounded-xl px-2 py-1 sm:rounded-2xl sm:px-3 sm:py-2"
         backdrop-blur-lg
+        max-w="80%"
       >
         {{ responseText }}
       </div>
