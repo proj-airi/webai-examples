@@ -6,6 +6,7 @@ import { check } from 'gpuu/webgpu'
 import { computed, onMounted, ref, watch } from 'vue'
 
 import Progress from './components/Progress.vue'
+import Range from './components/Range.vue'
 import { useTransformersWorker } from './composables/use-transformers-worker'
 import workerURL from './workers/yolov9-worker?worker&url'
 
@@ -331,6 +332,79 @@ onMounted(checkWebGPU)
           <div i-simple-icons:github class="size-4" />
         </a>
       </div>
+
+      <!-- Performance Monitor -->
+      <div
+        absolute left-4 top-16 z-10
+        bg="white/80 dark:neutral-900/80"
+        text="black dark:white <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
+        transition="all duration-300 ease-in-out"
+        flex gap-2
+      >
+        <span>FPS: <span font-mono>{{ fpsCounter }}</span></span>
+        <span>Objects: <span font-mono>{{ detectedObjects.length }}</span></span>
+      </div>
+
+      <!-- Control Panel -->
+      <div
+        bg="neutral-500/40 dark:neutral-900/70"
+        text="white/98 dark:neutral-100/90 <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:pb-1 sm:pt-2"
+        transition="all duration-300 ease-in-out"
+        min-w="280px"
+        grid-cols="[0.2fr_0.4fr_1fr]" absolute bottom-16 right-4 z-10 grid items-center gap-x-2 gap-y-1 text-sm
+      >
+        <!-- Model Size Control -->
+        <div>Size:</div>
+        <label for="model-size" w="90px" flex items-center gap-2>
+          <Range
+            v-model="modelSize"
+            :min="32"
+            :max="128"
+            :step="16"
+            :disabled="isProcessing"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ modelSize }}
+        </div>
+
+        <!-- Threshold Control -->
+        <div>Threshold:</div>
+        <label for="threshold" w="90px" flex items-center gap-2>
+          <Range
+            v-model="threshold"
+            :min="0.1"
+            :max="0.9"
+            :step="0.05"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ threshold.toFixed(2) }}
+        </div>
+
+        <!-- Scale Control -->
+        <div>Scale:</div>
+        <label for="scale" w="90px" flex items-center gap-2>
+          <Range
+            v-model="scale"
+            :min="0.1"
+            :max="1.0"
+            :step="0.1"
+            :disabled="isProcessing"
+            class="flex-1"
+          />
+        </label>
+        <div text-right font-mono>
+          {{ scale.toFixed(1) }}
+        </div>
+      </div>
+
       <button
         text="white/98 dark:neutral-100/90 <sm:xs"
         border="neutral-400/40 dark:neutral-500/50 1 solid"
@@ -358,78 +432,6 @@ onMounted(checkWebGPU)
         absolute z-10 h-5 w-full
       >
         <Progress :percentage="Math.min(100, overallProgress)" />
-      </div>
-
-      <!-- FPS Counter -->
-      <div
-        absolute left-4 top-16 z-10
-        bg="white/80 dark:neutral-900/80"
-        text="black dark:white <sm:xs"
-        border="neutral-400/40 dark:neutral-500/50 1 solid"
-        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
-        transition="all duration-300 ease-in-out"
-      >
-        FPS: {{ fpsCounter }}
-      </div>
-
-      <!-- Control Panel -->
-      <div
-        absolute bottom-15 right-4 z-10
-        bg="neutral-500/40 dark:neutral-900/70 "
-        text="white/98 dark:neutral-100/90 <sm:xs"
-        border="neutral-400/40 dark:neutral-500/50 1 solid"
-        outline="none"
-        shadow="none hover:lg"
-        transition="all duration-300 ease-in-out"
-        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
-        min-w="250px"
-      >
-        <!-- Model Size Control -->
-        <div mb-2 flex items-center gap-2>
-          <label for="model-size" w="80px">Size:</label>
-          <input
-            id="model-size"
-            v-model="modelSize"
-            type="range"
-            min="32"
-            max="128"
-            step="16"
-            :disabled="isProcessing"
-            class="flex-1"
-          >
-          <span w="40px" text-right>{{ modelSize }}</span>
-        </div>
-
-        <!-- Threshold Control -->
-        <div mb-2 flex items-center gap-2>
-          <label for="threshold" w="80px">Threshold:</label>
-          <input
-            id="threshold"
-            v-model="threshold"
-            type="range"
-            min="0.1"
-            max="0.9"
-            step="0.05"
-            class="flex-1"
-          >
-          <span w="40px" text-right>{{ threshold.toFixed(2) }}</span>
-        </div>
-
-        <!-- Scale Control -->
-        <div flex items-center gap-2>
-          <label for="scale" w="80px">Scale:</label>
-          <input
-            id="scale"
-            v-model="scale"
-            type="range"
-            min="0.1"
-            max="1.0"
-            step="0.1"
-            :disabled="isProcessing"
-            class="flex-1"
-          >
-          <span w="40px" text-right>{{ scale.toFixed(1) }}</span>
-        </div>
       </div>
 
       <div
@@ -484,8 +486,8 @@ onMounted(checkWebGPU)
       </div>
 
       <template v-else>
-        <canvas ref="captureCanvas" class="hidden" />
         <video ref="videoScreen" autoplay muted relative z-0 h-full w-full object-cover />
+        <canvas ref="captureCanvas" class="hidden" />
       </template>
 
       <div gap="1 sm:2" absolute bottom-0 right-0 z-10 h-full flex items-center class="max-h-12 p-2 sm:max-h-18 sm:p-4">
