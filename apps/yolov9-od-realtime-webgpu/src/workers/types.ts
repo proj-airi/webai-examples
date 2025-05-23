@@ -10,16 +10,10 @@ export interface Process {
   imageWidth: number
   imageHeight: number
   channels: 1 | 2 | 3 | 4
+  modelSize?: number
+  threshold?: number
 }
 
 export interface ProcessResult {
-  input: {
-    imageBuffer: Uint8ClampedArray | Uint8Array
-    imageWidth: number
-    imageHeight: number
-    channels: 1 | 2 | 3 | 4
-  }
-  output: {
-    data: ObjectDetectionPipelineSingle[]
-  }
+  data: ObjectDetectionPipelineSingle[]
 }

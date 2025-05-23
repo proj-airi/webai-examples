@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ObjectDetectionPipelineSingle } from '@huggingface/transformers'
 
-import { sleep } from '@moeru/std/sleep'
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -15,6 +14,10 @@ const { videoInputs, permissionGranted, isSupported } = useDevicesList({ constra
 const videoScreenContainer = ref<HTMLDivElement>()
 const videoScreen = ref<HTMLVideoElement>()
 const captureCanvas = ref<HTMLCanvasElement>()
+
+// Store original dimensions
+const originalWidth = ref(0)
+const originalHeight = ref(0)
 
 const selectedVideoSourceDeviceId = ref<ConstrainDOMString>()
 const videoSourceDeviceId = computed<ConstrainDOMString | undefined>({
@@ -71,12 +74,16 @@ const bgColorSets = [
 
 const constraints = computed(() => ({ video: { deviceId: selectedVideoSourceDeviceId.value } }))
 
-const intervalSelect = ref('5')
+const modelSize = ref(64) // Control model input size
+const threshold = ref(0.5) // Detection confidence threshold
+const scale = ref(0.5) // Camera stream scale factor
 
 const loaded = ref(false)
 const isProcessing = ref(false)
 const isWebGPULoading = ref(false)
 const isWebGPUSupported = ref(true)
+const fpsCounter = ref(0)
+const lastFrameTime = ref(0)
 
 const isDark = useDark({ disableTransition: false })
 const videoScreenContainerBounding = useElementBounding(videoScreenContainer, { immediate: true, windowResize: true })
@@ -92,15 +99,32 @@ function checkWebGPU() {
   })
 }
 
+function applyVideoScale() {
+  if (videoScreen.value && captureCanvas.value && stream.value) {
+    const videoTrack = stream.value.getVideoTracks()[0]
+    if (videoTrack) {
+      const { width, height } = videoTrack.getSettings()
+      if (width && height) {
+        // Store original dimensions for scaling back
+        originalWidth.value = width
+        originalHeight.value = height
+
+        const newWidth = Math.round(width * scale.value)
+        const newHeight = Math.round(height * scale.value)
+        captureCanvas.value.width = newWidth
+        captureCanvas.value.height = newHeight
+      }
+    }
+  }
+}
+
 function captureImage() {
   if (!stream || !videoScreen.value?.videoWidth || !captureCanvas.value) {
     console.warn('Video stream not ready for capture.')
     return null
   }
 
-  const { width, height } = videoScreen.value?.getBoundingClientRect()
-  captureCanvas.value.width = width
-  captureCanvas.value.height = height
+  applyVideoScale()
 
   const context = captureCanvas.value.getContext('2d', { willReadFrequently: true })
   if (!context) {
@@ -124,7 +148,6 @@ async function sendData() {
     return
   const rawImg = captureImage()
   if (!rawImg) {
-    // TODO: display error message
     return
   }
   try {
@@ -133,19 +156,82 @@ async function sendData() {
       imageWidth: rawImg.imageWidth,
       imageHeight: rawImg.imageHeight,
       channels: rawImg.channels,
+      modelSize: modelSize.value,
+      threshold: threshold.value,
     })
-    // TODO: display detected result
+    const endTime = performance.now()
+
+    // Calculate FPS
+    if (lastFrameTime.value) {
+      const frameTime = endTime - lastFrameTime.value
+      fpsCounter.value = Math.round(1000 / frameTime)
+    }
+    lastFrameTime.value = endTime
+
     if (response && response.length > 0) {
-      detectedObjects.value = response.map(item => ({
-        box: {
-          xmin: item.box.xmin,
-          ymin: item.box.ymin,
-          xmax: item.box.xmax,
-          ymax: item.box.ymax,
-        },
-        label: item.label,
-        score: item.score,
-      }))
+      // Scale bounding boxes back to original video dimensions
+      const videoElement = videoScreen.value
+      if (!videoElement)
+        return
+
+      // Get the dimensions we need for scaling
+      const displayWidth = videoElement.offsetWidth
+      const displayHeight = videoElement.offsetHeight
+
+      // Get processed image dimensions
+      const processedWidth = rawImg.imageWidth
+      const processedHeight = rawImg.imageHeight
+
+      // For the rendering on screen, we need to consider the actual display dimensions
+      detectedObjects.value = response.map((item) => {
+        // Get original coordinates
+        const { xmin, ymin, xmax, ymax } = item.box
+        console.warn('before', item.box)
+
+        // Determine if coordinates seem normalized (between 0-1) or in pixel space
+        const isNormalized = xmax <= 1 && ymax <= 1
+
+        let scaledBox
+        if (isNormalized) {
+          // If coordinates are normalized (0-1), directly multiply by display dimensions
+          scaledBox = {
+            xmin: xmin * displayWidth,
+            ymin: ymin * displayHeight,
+            xmax: xmax * displayWidth,
+            ymax: ymax * displayHeight,
+          }
+        }
+        else {
+          // If coordinates are in pixel space relative to the model input, scale proportionally
+
+          // Calculate the model dimensions (could be different from processed dimensions due to padding)
+          // Default to the model size if available
+          const modelWidth = modelSize.value || processedWidth
+          const modelHeight = modelSize.value || processedHeight
+
+          // How the model's coordinates relate to the actual frame depends on model preprocessing
+          // For many models, we need to account for aspect ratio preservation and letterboxing
+
+          // Scale from model space to display space
+          const xScale = displayWidth / modelWidth
+          const yScale = displayHeight / modelHeight
+
+          scaledBox = {
+            xmin: xmin * xScale,
+            ymin: ymin * yScale,
+            xmax: xmax * xScale,
+            ymax: ymax * yScale,
+          }
+        }
+
+        console.warn('after', scaledBox)
+
+        return {
+          box: scaledBox,
+          label: item.label,
+          score: item.score,
+        }
+      })
     }
     else {
       detectedObjects.value = []
@@ -153,25 +239,30 @@ async function sendData() {
   }
   catch (e) {
     console.error(e)
-    // TODO: display error message
   }
 }
 
-async function processingLoop() {
-  const intervalMs = Number.parseInt(intervalSelect.value, 10)
-  while (isProcessing.value) {
-    await sendData()
-    if (!isProcessing.value)
-      break
-    await sleep(intervalMs)
+let animationFrameId: number | null = null
+
+function processingLoop() {
+  if (!isProcessing.value) {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+    }
+    return
   }
+
+  sendData().finally(() => {
+    if (isProcessing.value) {
+      animationFrameId = requestAnimationFrame(processingLoop)
+    }
+  })
 }
 
 async function handleStart() {
   if (!stream) {
-    // TODO: ?
-    // eslint-disable-next-line no-alert
-    alert('Camera not available. Please grant permission first.')
+    console.warn('Camera not available. Please grant permission first.')
     return
   }
 
@@ -183,15 +274,15 @@ async function handleStart() {
   }
 
   isProcessing.value = true
-  // TODO: ?
   processingLoop()
 }
 
 function handleStop() {
   isProcessing.value = false
-  // if (responseText.value === '...') {
-  //   responseText.value = ''
-  // }
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
 }
 
 function handleClick() {
@@ -269,6 +360,78 @@ onMounted(checkWebGPU)
         <Progress :percentage="Math.min(100, overallProgress)" />
       </div>
 
+      <!-- FPS Counter -->
+      <div
+        absolute left-4 top-16 z-10
+        bg="white/80 dark:neutral-900/80"
+        text="black dark:white <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
+        transition="all duration-300 ease-in-out"
+      >
+        FPS: {{ fpsCounter }}
+      </div>
+
+      <!-- Control Panel -->
+      <div
+        absolute bottom-15 right-4 z-10
+        bg="neutral-500/40 dark:neutral-900/70 "
+        text="white/98 dark:neutral-100/90 <sm:xs"
+        border="neutral-400/40 dark:neutral-500/50 1 solid"
+        outline="none"
+        shadow="none hover:lg"
+        transition="all duration-300 ease-in-out"
+        class="rounded-xl p-2 sm:rounded-2xl sm:px-3 sm:py-2"
+        min-w="250px"
+      >
+        <!-- Model Size Control -->
+        <div mb-2 flex items-center gap-2>
+          <label for="model-size" w="80px">Size:</label>
+          <input
+            id="model-size"
+            v-model="modelSize"
+            type="range"
+            min="32"
+            max="128"
+            step="16"
+            :disabled="isProcessing"
+            class="flex-1"
+          >
+          <span w="40px" text-right>{{ modelSize }}</span>
+        </div>
+
+        <!-- Threshold Control -->
+        <div mb-2 flex items-center gap-2>
+          <label for="threshold" w="80px">Threshold:</label>
+          <input
+            id="threshold"
+            v-model="threshold"
+            type="range"
+            min="0.1"
+            max="0.9"
+            step="0.05"
+            class="flex-1"
+          >
+          <span w="40px" text-right>{{ threshold.toFixed(2) }}</span>
+        </div>
+
+        <!-- Scale Control -->
+        <div flex items-center gap-2>
+          <label for="scale" w="80px">Scale:</label>
+          <input
+            id="scale"
+            v-model="scale"
+            type="range"
+            min="0.1"
+            max="1.0"
+            step="0.1"
+            :disabled="isProcessing"
+            class="flex-1"
+          >
+          <span w="40px" text-right>{{ scale.toFixed(1) }}</span>
+        </div>
+      </div>
+
       <div
         v-for="(item, index) in detectedObjects" :key="index"
         fixed
@@ -279,6 +442,7 @@ onMounted(checkWebGPU)
           height: `${item.box.ymax - item.box.ymin}px`,
           zIndex: 100 + 100 * index,
         }"
+        :data-box="JSON.stringify(item.box)"
         class="box-content border-4 rounded-lg"
         :class="[
           borderColorSets[index % borderColorSets.length],

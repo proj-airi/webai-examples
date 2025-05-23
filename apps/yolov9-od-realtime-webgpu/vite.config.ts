@@ -20,7 +20,7 @@ export default defineConfig({
       sdk: 'static',
       pinned: false,
       license: 'mit',
-      models: ['Xenova/yolos-tiny'],
+      models: ['Xenova/yolos-tiny', 'Xenova/gelan-c_all'],
       short_description: 'Yet another Realtime YOLOv9 Object Detection WebGPU',
     }),
   ],

@@ -21,7 +21,7 @@ export function createYoloV9Worker<T extends LoadOptions<object>>(createOptions:
 
   const process = async (process: Process) => {
     const res = await worker.process<Process, ProcessResult>({ data: process, type: 'process' }, 'processResult')
-    return res.output.data
+    return res.data.filter(item => item.score > (process?.threshold || 0.1))
   }
 
   return {
