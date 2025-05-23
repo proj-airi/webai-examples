@@ -491,7 +491,7 @@ onUnmounted(() => vlmWorker.value?.dispose())
         v-if="responseText"
         translate-x="-50%" absolute bottom="20" left="1/2" z-10
         bg="neutral-700/60 dark:neutral-900/90"
-        text="white/98 dark:neutral-100/90 <sm:xs"
+        text="white/98 dark:neutral-100/90 xs sm:xl"
         border="neutral-400/40 dark:neutral-500/50 1 solid"
         transition="all duration-300 ease-in-out"
         class="rounded-xl px-2 py-1 sm:rounded-2xl sm:px-3 sm:py-2"
