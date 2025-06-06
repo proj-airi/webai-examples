@@ -2,9 +2,9 @@
 import { onMounted, ref, watch } from 'vue'
 
 import { INPUT_SAMPLE_RATE } from './constants'
-import WORKLET_URL from './workers/play-worklet.ts?worker&url'
-import VAD_WORKLET_URL from './workers/vad-processor.ts?worker&url'
-import WORKER_URL from './workers/worker.ts?url'
+import WORKLET_URL from './workers/play-worklet?worker&url'
+import VAD_WORKLET_URL from './workers/vad-processor?worker&url'
+import WORKER_URL from './workers/worker?url'
 
 interface Voice {
   name: string
