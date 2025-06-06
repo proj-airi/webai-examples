@@ -67,6 +67,7 @@ words:
   - hunyuan
   - hyoban
   - iconify
+  - Interruptable
   - intlify
   - Kawaii
   - kokoro
@@ -157,5 +158,6 @@ words:
   - yolo
   - yolov9
   - zhipu
+  - SmolLM
 ignoreWords: []
 import: []

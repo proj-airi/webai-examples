@@ -269,7 +269,7 @@ async function speechToSpeech(buffer: Float32Array, _data: SpeechData): Promise<
   const generatedRes = await llm.generate({
     ...inputs,
     past_key_values: past_key_values_cache,
-    do_sample: false, // TODO: do_sample: true is bugged (invalid data location on topk sample)
+    do_sample: false, // TODO: do_sample: true is bugged (invalid data location on top-k sample)
     max_new_tokens: 1024,
     streamer,
     stopping_criteria: stopping_criteria as unknown as StoppingCriteriaList,
