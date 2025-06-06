@@ -1,14 +1,20 @@
 import type {
-
   AutomaticSpeechRecognitionPipeline,
   CausalLMOutputWithPast,
   GPT2Tokenizer,
   LlamaForCausalLM,
-  PretrainedConfig,
   PreTrainedModel,
   StoppingCriteriaList,
 } from '@huggingface/transformers'
+import type { Device, DType } from '@xsai-transformers/shared/types'
 import type { GenerateOptions } from 'kokoro-js'
+import type {
+  WorkerMessageEventError,
+  WorkerMessageEventInfo,
+  WorkerMessageEventOutput,
+  WorkerMessageEventProgress,
+  WorkerMessageEventStatus,
+} from '../types/worker'
 
 import {
   // VAD
@@ -24,6 +30,7 @@ import {
   Tensor,
   TextStreamer,
 } from '@huggingface/transformers'
+import { isWebGPUSupported } from 'gpuu/webgpu'
 import { KokoroTTS, TextSplitterStream } from 'kokoro-js'
 
 import {
@@ -43,6 +50,18 @@ interface Message {
 }
 
 type Voices = GenerateOptions['voice']
+export type PretrainedConfig = NonNullable<Parameters<typeof AutoModel.from_pretrained>[1]>['config']
+
+const whisperDtypeMap: Record<Device, DType> = {
+  webgpu: {
+    encoder_model: 'fp32',
+    decoder_model_merged: 'fp32',
+  },
+  wasm: {
+    encoder_model: 'fp32',
+    decoder_model_merged: 'q8',
+  },
+}
 
 const model_id = 'onnx-community/Kokoro-82M-v1.0-ONNX'
 let voice: Voices | undefined
@@ -71,7 +90,6 @@ let state = new Tensor('float32', new Float32Array(2 * 1 * 128), [2, 1, 128])
 let isRecording = false
 let isPlaying = false // new flag
 
-const llm_model_id = 'HuggingFaceTB/SmolLM2-1.7B-Instruct'
 let tokenizer: GPT2Tokenizer
 let llm: LlamaForCausalLM
 
@@ -84,12 +102,8 @@ export async function loadModels() {
   })
 
   const device = 'webgpu'
-  globalThis.postMessage({ type: 'info', message: `Using device: "${device}"` })
-  globalThis.postMessage({
-    type: 'info',
-    message: 'Loading models...',
-    duration: 'until_next',
-  })
+  globalThis.postMessage({ type: 'info', data: { message: `Using device: "${device}"` } } satisfies WorkerMessageEventInfo)
+  globalThis.postMessage({ type: 'info', data: { message: 'Loading models...', duration: 'until_next' } } satisfies WorkerMessageEventInfo)
 
   // Load models
   silero_vad = await AutoModel.from_pretrained(
@@ -97,60 +111,57 @@ export async function loadModels() {
     {
       config: { model_type: 'custom' } as PretrainedConfig,
       dtype: 'fp32', // Full-precision
-      progress_callback: (progress) => {
-        globalThis.postMessage({ type: 'info', message: progress })
-      },
+      progress_callback: progress => globalThis.postMessage({ type: 'progress', data: { message: progress } } satisfies WorkerMessageEventProgress),
     },
   ).catch((error: Error) => {
-    globalThis.postMessage({ error })
+    globalThis.postMessage({ type: 'error', data: { error, message: error.message } } satisfies WorkerMessageEventError<Error>)
     throw error
   })
-
-  const DEVICE_DTYPE_CONFIGS = {
-    webgpu: {
-      encoder_model: 'fp32',
-      decoder_model_merged: 'fp32',
-    },
-    wasm: {
-      encoder_model: 'fp32',
-      decoder_model_merged: 'q8',
-    },
-  } as const
 
   transcriber = await pipeline(
     'automatic-speech-recognition',
     'onnx-community/whisper-base', // or "onnx-community/moonshine-base-ONNX",
     {
       device,
-      dtype: DEVICE_DTYPE_CONFIGS[device as keyof typeof DEVICE_DTYPE_CONFIGS],
-      progress_callback: (progress) => {
-        globalThis.postMessage({ type: 'info', message: progress })
-      },
+      dtype: whisperDtypeMap[device as keyof typeof whisperDtypeMap],
+      progress_callback: progress => globalThis.postMessage({ type: 'progress', data: { message: progress } } satisfies WorkerMessageEventProgress),
     },
   ).catch((error: Error) => {
-    globalThis.postMessage({ error })
+    globalThis.postMessage({ type: 'error', data: { error, message: error.message } } satisfies WorkerMessageEventError<Error>)
     throw error
   })
 
   await transcriber(new Float32Array(INPUT_SAMPLE_RATE)) // Compile shaders
 
-  tokenizer = await AutoTokenizer.from_pretrained(llm_model_id)
-  llm = await AutoModelForCausalLM.from_pretrained(llm_model_id, {
-    dtype: 'q4f16',
-    device: 'webgpu',
-    progress_callback: (progress) => {
-      globalThis.postMessage({ type: 'info', message: progress })
+  llm = await AutoModelForCausalLM.from_pretrained(
+    'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+    {
+      dtype: await isWebGPUSupported() ? 'q4f16' : 'int8',
+      device: await isWebGPUSupported() ? 'webgpu' : 'wasm',
+      progress_callback: progress => globalThis.postMessage({ type: 'progress', data: { message: progress } } satisfies WorkerMessageEventProgress),
     },
+  ).catch((error: Error) => {
+    globalThis.postMessage({ type: 'error', data: { error, message: error.message } } satisfies WorkerMessageEventError<Error>)
+    throw error
+  })
+
+  tokenizer = await AutoTokenizer.from_pretrained(
+    'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+  ).catch((error: Error) => {
+    globalThis.postMessage({ type: 'error', data: { error, message: error.message } } satisfies WorkerMessageEventError<Error>)
+    throw error
   })
 
   await llm.generate({ ...tokenizer('x'), max_new_tokens: 1 }) // Compile shaders
 
   globalThis.postMessage({
     type: 'status',
-    status: 'ready',
-    message: 'Ready!',
-    voices: tts.voices,
-  })
+    data: {
+      status: 'ready',
+      message: 'Ready!',
+      voices: tts.voices,
+    },
+  } as WorkerMessageEventStatus)
 }
 
 loadModels()
@@ -160,7 +171,12 @@ loadModels()
  * @param buffer The new audio buffer
  * @returns `true` if the buffer is speech, `false` otherwise.
  */
-async function vad(buffer: Float32Array): Promise<boolean> {
+async function vad(buffer?: Float32Array): Promise<boolean> {
+  if (!buffer) {
+    // Possibly closed or interrupted
+    return false
+  }
+
   const input = new Tensor('float32', buffer, [1, buffer.length])
 
   const { stateN, output } = await silero_vad({ input, sr, state })
@@ -205,7 +221,7 @@ interface BatchEncoding {
 /**
  * Transcribe the audio buffer
  * @param buffer The audio buffer
- * @param data Additional data
+ * @param _data Additional data
  */
 async function speechToSpeech(buffer: Float32Array, _data: SpeechData): Promise<void> {
   isPlaying = true
@@ -228,7 +244,7 @@ async function speechToSpeech(buffer: Float32Array, _data: SpeechData): Promise<
   });
   (async () => {
     for await (const { text, audio } of stream) {
-      globalThis.postMessage({ type: 'output', text, result: audio })
+      globalThis.postMessage({ type: 'output', data: { text, result: audio } } satisfies WorkerMessageEventOutput)
     }
   })()
 
@@ -280,10 +296,12 @@ let postSpeechSamples = 0
 function resetAfterRecording(offset = 0): void {
   globalThis.postMessage({
     type: 'status',
-    status: 'recording_end',
-    message: 'Transcribing...',
-    duration: 'until_next',
-  })
+    data: {
+      status: 'recording_end',
+      message: 'Transcribing...',
+      duration: 'until_next',
+    },
+  } satisfies WorkerMessageEventStatus)
 
   BUFFER.fill(0, offset)
   bufferPointer = offset
@@ -387,10 +405,12 @@ globalThis.onmessage = async (event: MessageEvent) => {
       // Indicate start of recording
       globalThis.postMessage({
         type: 'status',
-        status: 'recording_start',
-        message: 'Listening...',
-        duration: 'until_next',
-      })
+        data: {
+          status: 'recording_start',
+          message: 'Listening...',
+          duration: 'until_next',
+        },
+      } satisfies WorkerMessageEventStatus)
     }
     // Start or continue recording
     isRecording = true
@@ -424,7 +444,7 @@ function greet(text: string): void {
   const stream = tts!.stream(splitter, { voice });
   (async () => {
     for await (const { text: chunkText, audio } of stream) {
-      globalThis.postMessage({ type: 'output', text: chunkText, result: audio })
+      globalThis.postMessage({ type: 'output', data: { text: chunkText, result: audio } } satisfies WorkerMessageEventOutput)
     }
   })()
   splitter.push(text)

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { VoiceName, Voices } from './types/kokoro'
+import type { WorkerMessageEvent } from './types/worker'
+
 import { onMounted, ref, watch } from 'vue'
 
 import { INPUT_SAMPLE_RATE } from './constants'
@@ -6,32 +9,12 @@ import WORKLET_URL from './workers/play-worklet?worker&url'
 import VAD_WORKLET_URL from './workers/vad-processor?worker&url'
 import WORKER_URL from './workers/worker?url'
 
-interface Voice {
-  name: string
-  language: string
-  gender: string
-}
-
-interface VoiceMap {
-  [key: string]: Voice
-}
-
-interface WorkerMessage {
-  type: string
-  status?: string
-  voices?: VoiceMap
-  error?: Error
-  result?: {
-    audio: Float32Array
-  }
-}
-
 const callStartTime = ref<number | null>(null)
 const callStarted = ref<boolean>(false)
 const playing = ref<boolean>(false)
 
-const voice = ref<string>('af_heart')
-const voices = ref<VoiceMap>({})
+const voice = ref<VoiceName>('af_heart')
+const voices = ref<Voices>({} as Voices)
 
 const isListening = ref<boolean>(false)
 const isSpeaking = ref<boolean>(false)
@@ -83,32 +66,30 @@ onMounted(() => {
     type: 'module',
   })
 
-  const onError = (err: Error): void => {
-    error.value = err.message
+  const onError = (err: Error | unknown): void => {
+    error.value = err instanceof Error ? err.message : String(err)
   }
 
-  const onMessage = ({ data }: { data: WorkerMessage }): void => {
-    if (data.error) {
-      return onError(data.error)
-    }
-
+  const onMessage = ({ data }: { data: WorkerMessageEvent }): void => {
     switch (data.type) {
+      case 'error':
+        return onError(data.data.error)
       case 'status':
-        if (data.status === 'recording_start') {
+        if (data.data.status === 'recording_start') {
           isListening.value = true
           isSpeaking.value = false
         }
-        else if (data.status === 'recording_end') {
+        else if (data.data.status === 'recording_end') {
           isListening.value = false
         }
-        else if (data.status === 'ready') {
-          voices.value = data.voices || {}
+        else if (data.data.status === 'ready') {
+          voices.value = data.data.voices || {} as Voices
           ready.value = true
         }
         break
       case 'output':
-        if (!playing.value && node.value && data.result) {
-          node.value.port.postMessage(data.result.audio)
+        if (!playing.value && node.value && data.data.result) {
+          node.value.port.postMessage(data.data.result.audio)
           playing.value = true
           isSpeaking.value = true
           isListening.value = false

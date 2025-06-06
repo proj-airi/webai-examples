@@ -51,3 +51,5 @@ The application should now be running locally. Open your browser and go to `http
 Great thanks to what WebML Community have done.
 
 > [Source code](https://huggingface.co/spaces/webml-community/conversational-webgpu)
+
+> [UI inspiration](https://app.sesame.com/)

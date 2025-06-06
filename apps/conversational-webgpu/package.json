@@ -20,6 +20,7 @@
     "@unocss/reset": "^66.1.2",
     "@vueuse/core": "^13.2.0",
     "@xsai-transformers/shared": "^0.0.6",
+    "embla-carousel-vue": "^8.6.0",
     "gpuu": "^1.0.3",
     "hfup": "^0.5.0",
     "kokoro-js": "^1.2.1",
