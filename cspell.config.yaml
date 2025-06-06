@@ -69,6 +69,7 @@ words:
   - iconify
   - intlify
   - Kawaii
+  - kokoro
   - kwaa
   - libsodium
   - listhen
@@ -153,8 +154,8 @@ words:
   - Xenova
   - xsai
   - xsschema
-  - zhipu
   - yolo
   - yolov9
+  - zhipu
 ignoreWords: []
 import: []
