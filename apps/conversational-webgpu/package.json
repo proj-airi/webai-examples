@@ -1,0 +1,38 @@
+{
+  "name": "@proj-airi/conversational-webgpu",
+  "type": "module",
+  "private": true,
+  "description": "Yet another Realtime Conversational WebGPU",
+  "author": {
+    "name": "Project AIRI Team",
+    "email": "airi@moeru.ai",
+    "url": "https://github.com/proj-airi"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite  --port 5177",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@unocss/reset": "^66.1.2",
+    "@vueuse/core": "^13.2.0",
+    "@xsai-transformers/shared": "^0.0.6",
+    "gpuu": "^1.0.3",
+    "hfup": "^0.5.0",
+    "kokoro-js": "^1.2.1",
+    "vue": "^3.5.14"
+  },
+  "devDependencies": {
+    "@huggingface/transformers": "^3.5.1",
+    "@iconify-json/simple-icons": "^1.2.35",
+    "@iconify-json/solar": "^1.2.2",
+    "@iconify-json/svg-spinners": "^1.2.2",
+    "@moeru/std": "0.1.0-beta.1",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@webgpu/types": "^0.1.60",
+    "vue-tsc": "^2.2.10"
+  }
+}
