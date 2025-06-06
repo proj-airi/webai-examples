@@ -381,7 +381,6 @@ onUnmounted(() => vlmWorker.value?.dispose())
 
       <!-- Control Panel -->
       <div
-
         bg="neutral-500/40 dark:neutral-900/70"
         text="white/98 dark:neutral-100/90 <sm:xs"
         border="neutral-400/40 dark:neutral-500/50 1 solid"
@@ -389,6 +388,7 @@ onUnmounted(() => vlmWorker.value?.dispose())
         transition="all duration-300 ease-in-out"
         min-w="280px"
         grid-cols="[0.2fr_0.4fr_1fr]" absolute bottom-16 right-4 z-10 grid items-center gap-x-2 gap-y-1 text-sm
+        backdrop-blur-lg
       >
         <!-- Image Scale Control -->
         <div>Scale:</div>

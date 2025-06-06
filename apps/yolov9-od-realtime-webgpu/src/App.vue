@@ -356,6 +356,7 @@ onMounted(checkWebGPU)
         transition="all duration-300 ease-in-out"
         min-w="280px"
         grid-cols="[0.2fr_0.4fr_1fr]" absolute bottom-16 right-4 z-10 grid items-center gap-x-2 gap-y-1 text-sm
+        backdrop-blur-lg
       >
         <!-- Model Size Control -->
         <div>Size:</div>
