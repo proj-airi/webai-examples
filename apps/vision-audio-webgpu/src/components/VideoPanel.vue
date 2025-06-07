@@ -5,7 +5,7 @@ import { useDark } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { inject } from 'vue'
 
-import { useVisionStore } from '../composables/useVision'
+import { useVisionStore } from '../composables/use-vision'
 import Progress from './Progress.vue'
 import Range from './Range.vue'
 

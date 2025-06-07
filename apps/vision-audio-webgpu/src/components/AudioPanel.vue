@@ -4,8 +4,8 @@ import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { inject } from 'vue'
 
-import { useAudioStore } from '../composables/useAudio'
-import { useVisionStore } from '../composables/useVision'
+import { useAudioStore } from '../composables/use-audio'
+import { useVisionStore } from '../composables/use-vision'
 
 // Interface for captured image
 interface CapturedImage {
