@@ -14,7 +14,7 @@ import type {
   WorkerMessageEventOutput,
   WorkerMessageEventProgress,
   WorkerMessageEventStatus,
-} from '../types/worker'
+} from '../../types/worker'
 
 import {
   // VAD
@@ -42,7 +42,7 @@ import {
   MIN_SPEECH_DURATION_SAMPLES,
   SPEECH_PAD_SAMPLES,
   SPEECH_THRESHOLD,
-} from '../constants'
+} from '../../constants'
 
 interface Message {
   role: 'system' | 'user' | 'assistant'
