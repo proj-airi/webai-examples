@@ -2,13 +2,16 @@
 import type { VoiceName, Voices } from './types/kokoro'
 import type { WorkerMessageEvent } from './types/worker'
 
+import { converter, formatRgb, oklch } from 'culori'
 import { onMounted, ref, watch } from 'vue'
 
+import { Carousel, CarouselContent, CarouselItem } from './components/Carousel'
 import { INPUT_SAMPLE_RATE } from './constants'
 import WORKLET_URL from './workers/play-worklet?worker&url'
 import VAD_WORKLET_URL from './workers/vad-processor?worker&url'
 import WORKER_URL from './workers/worker?url'
 
+const loading = ref<boolean>(false)
 const callStartTime = ref<number | null>(null)
 const callStarted = ref<boolean>(false)
 const playing = ref<boolean>(false)
@@ -22,20 +25,13 @@ const listeningScale = ref<number>(1)
 const speakingScale = ref<number>(1)
 const ripples = ref<number[]>([])
 
-const ready = ref<boolean>(false)
+const modelsInitialized = ref<boolean>(false)
 const error = ref<string | null>(null)
 const elapsedTime = ref<string>('00:00')
 const worker = ref<Worker | null>(null)
 
 const micStreamRef = ref<MediaStream | null>(null)
 const node = ref<AudioWorkletNode | null>(null)
-
-watch(voice, () => {
-  worker.value?.postMessage({
-    type: 'set_voice',
-    voice: voice.value,
-  })
-})
 
 watch(callStarted, () => {
   if (!callStarted.value) {
@@ -62,48 +58,64 @@ watch(callStarted, () => {
 })
 
 onMounted(() => {
-  worker.value ??= new Worker(WORKER_URL, {
-    type: 'module',
-  })
+  loading.value = true
 
-  const onError = (err: Error | unknown): void => {
-    error.value = err instanceof Error ? err.message : String(err)
-  }
+  try {
+    worker.value ??= new Worker(WORKER_URL, {
+      type: 'module',
+    })
 
-  const onMessage = ({ data }: { data: WorkerMessageEvent }): void => {
-    switch (data.type) {
-      case 'error':
-        return onError(data.data.error)
-      case 'status':
-        if (data.data.status === 'recording_start') {
-          isListening.value = true
-          isSpeaking.value = false
-        }
-        else if (data.data.status === 'recording_end') {
-          isListening.value = false
-        }
-        else if (data.data.status === 'ready') {
-          voices.value = data.data.voices || {} as Voices
-          ready.value = true
-        }
-        break
-      case 'output':
-        if (!playing.value && node.value && data.data.result) {
-          node.value.port.postMessage(data.data.result.audio)
-          playing.value = true
-          isSpeaking.value = true
-          isListening.value = false
-        }
-        break
+    const onError = (err: Error | unknown): void => {
+      error.value = err instanceof Error ? err.message : String(err)
+    }
+
+    const onMessage = ({ data }: { data: WorkerMessageEvent }): void => {
+      switch (data.type) {
+        case 'error':
+          loading.value = false
+
+          return onError(data.data.error)
+        case 'status':
+          if (data.data.status === 'recording_start') {
+            isListening.value = true
+            isSpeaking.value = false
+          }
+          else if (data.data.status === 'recording_end') {
+            isListening.value = false
+          }
+          else if (data.data.status === 'ready') {
+            voices.value = data.data.voices || {} as Voices
+            modelsInitialized.value = true
+            loading.value = false
+          }
+
+          break
+        case 'output':
+          if (!playing.value && node.value && data.data.result) {
+            node.value.port.postMessage(data.data.result.audio)
+            playing.value = true
+            isSpeaking.value = true
+            isListening.value = false
+          }
+
+          break
+        case 'set_voice_response':
+          handleDial()
+          break
+      }
+    }
+
+    worker.value.addEventListener('message', onMessage)
+    worker.value.addEventListener('error', (event: ErrorEvent) => onError(event.error))
+
+    return () => {
+      worker.value?.removeEventListener('message', onMessage)
+      worker.value?.removeEventListener('error', (event: ErrorEvent) => onError(event.error))
     }
   }
-
-  worker.value.addEventListener('message', onMessage)
-  worker.value.addEventListener('error', (event: ErrorEvent) => onError(event.error))
-
-  return () => {
-    worker.value?.removeEventListener('message', onMessage)
-    worker.value?.removeEventListener('error', (event: ErrorEvent) => onError(event.error))
+  catch (err) {
+    console.error('Failed to initialize worker:', err)
+    loading.value = false
   }
 })
 
@@ -235,7 +247,15 @@ watch(callStarted, () => {
   return () => clearInterval(interval)
 })
 
-async function handleStartCall(): Promise<void> {
+async function handleStartCall(k: VoiceName | string): Promise<void> {
+  voice.value = k as VoiceName
+  worker.value?.postMessage({
+    type: 'set_voice',
+    voice: k,
+  })
+}
+
+async function handleDial() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -259,132 +279,169 @@ async function handleStartCall(): Promise<void> {
     }
   }
 }
+
+function handleEndCall(): void {
+  callStarted.value = false
+  callStartTime.value = null
+  playing.value = false
+  isListening.value = false
+  isSpeaking.value = false
+}
+
+function shadesOfColorsFromRangeByIndex(
+  index: number,
+  range: number,
+  options?: {
+    baseAmplify?: number
+    factor?: number
+    inverted?: boolean
+    reversed?: boolean
+  },
+): string {
+  const baseAmplify = options?.baseAmplify ?? 0.5
+  const factor = options?.factor ?? 0.5
+  const inverted = options?.inverted ?? false
+  const reversed = options?.reversed ?? false
+
+  let lightness = baseAmplify + (index / range) * factor
+  if (reversed) {
+    lightness = 1 - lightness
+  }
+
+  const adjustedLightness = inverted ? 1 - lightness : lightness
+  const color = oklch({ mode: 'oklch', l: adjustedLightness, h: 220, c: 0.1 })
+  return formatRgb(converter('rgb')(color))
+}
 </script>
 
 <template>
-  <div class="relative h-screen min-h-[240px] flex items-center justify-center bg-gray-50 p-4">
-    <div class="h-full max-h-[320px] w-[640px] flex items-center justify-between rounded-xl bg-white p-8 shadow-lg space-x-16">
-      <div class="w-[140px] text-green-700">
-        <div class="flex justify-between text-xl font-bold">
-          {{ voices[voice]?.name }}
-          <span class="text-gray-500 font-normal">{{ elapsedTime }}</span>
+  <div class="relative h-100dvh w-100dvw flex items-center justify-center">
+    <div h-full flex items-center justify-center>
+      <Transition name="fade" mode="out-in">
+        <div v-if="loading">
+          <div i-svg-spinners:3-dots-bounce text-2xl />
         </div>
-        <div class="relative text-base">
-          <button
-            type="button"
-            :disabled="!ready"
-            class="w-full flex items-center justify-between border border-gray-300 rounded-md transition-colors" :class="[
-              ready ? 'bg-transparent hover:border-gray-400' : 'bg-gray-100 opacity-50 cursor-not-allowed',
-            ]"
-          >
-            <span class="px-2 py-1">Select voice</span>
-            <i i-lucide-chevron-down class="absolute right-2" />
-          </button>
-          <select
-            v-model="voice"
-            class="absolute inset-0 cursor-pointer opacity-0"
-            :disabled="!ready"
-          >
-            <option v-for="[key, v] in Object.entries(voices)" :key="key" :value="key">
-              {{ `${v.name} (${v.language === 'en-us' ? 'American' : v.language} ${v.gender})` }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="relative aspect-square h-32 w-32 flex flex-shrink-0 items-center justify-center">
-        <template v-if="callStarted">
+        <div v-else-if="callStarted" h-full flex flex-col items-center justify-between p-4>
+          <div>
+            <div class="mb-4 flex items-center gap-2">
+              <div text="cyan-400 dark:cyan-500" text-lg>
+                {{ voices[voice]?.name || voice }} {{ elapsedTime }}
+              </div>
+            </div>
+          </div>
+          <div class="relative aspect-square h-32 w-32 flex flex-shrink-0 items-center justify-center">
+            <template v-if="callStarted">
+              <div
+                v-for="id in ripples"
+                :key="id"
+                class="pointer-events-none absolute inset-0 border-2 border-cyan-200 rounded-full dark:border-cyan-500"
+                style="animation: ripple 1.5s ease-out forwards"
+              />
+            </template>
+            <!-- Pulsing loader while initializing -->
+            <div
+              class="absolute h-32 w-32 rounded-full" :class="[
+                error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-800',
+                !modelsInitialized ? 'animate-ping opacity-75' : '',
+              ]"
+              style="animation-duration: 1.5s"
+            />
+            <!-- Main rings -->
+            <div
+              class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
+                error ? 'bg-red-300 dark:bg-red-400' : 'bg-cyan-300 dark:bg-cyan-800',
+                !modelsInitialized ? 'opacity-0' : '',
+              ]"
+              :style="{ transform: `scale(${speakingScale})` }"
+            />
+            <div
+              class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
+                error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-600',
+                !modelsInitialized ? 'opacity-0' : '',
+              ]"
+              :style="{ transform: `scale(${listeningScale})` }"
+            />
+            <!-- Center text: show error if present, else existing statuses -->
+            <div
+              class="absolute z-10 text-center text-sm" :class="[
+                error ? 'text-red-700' : 'text-gray-700 dark:text-white',
+              ]"
+            >
+              <template v-if="error">
+                {{ error }}
+              </template>
+              <template v-else>
+                <template v-if="!modelsInitialized">
+                  Loading...
+                </template>
+                <template v-if="isListening">
+                  Listening...
+                </template>
+                <template v-if="isSpeaking">
+                  Speaking...
+                </template>
+              </template>
+            </div>
+          </div>
           <div
-            v-for="id in ripples"
-            :key="id"
-            class="pointer-events-none absolute inset-0 border-2 border-green-200 rounded-full"
-            style="animation: ripple 1.5s ease-out forwards"
-          />
-        </template>
-        <!-- Pulsing loader while initializing -->
-        <div
-          class="absolute h-32 w-32 rounded-full" :class="[
-            error ? 'bg-red-200' : 'bg-green-200',
-            !ready ? 'animate-ping opacity-75' : '',
-          ]"
-          style="animation-duration: 1.5s"
-        />
-        <!-- Main rings -->
-        <div
-          class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
-            error ? 'bg-red-300' : 'bg-green-300',
-            !ready ? 'opacity-0' : '',
-          ]"
-          :style="{ transform: `scale(${speakingScale})` }"
-        />
-        <div
-          class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
-            error ? 'bg-red-200' : 'bg-green-200',
-            !ready ? 'opacity-0' : '',
-          ]"
-          :style="{ transform: `scale(${listeningScale})` }"
-        />
-        <!-- Center text: show error if present, else existing statuses -->
-        <div
-          class="absolute z-10 text-center text-lg" :class="[
-            error ? 'text-red-700' : 'text-gray-700',
-          ]"
-        >
-          <template v-if="error">
-            {{ error }}
-          </template>
-          <template v-else>
-            <template v-if="!ready">
-              Loading...
-            </template>
-            <template v-if="isListening">
-              Listening...
-            </template>
-            <template v-if="isSpeaking">
-              Speaking...
-            </template>
-          </template>
+            bg="cyan-50 dark:cyan-950"
+            w-fit flex rounded-xl px-1 py-1 text-sm outline-none
+          >
+            <button
+              bg="hover:cyan-100 dark:hover:cyan-900"
+              text="red-400 hover:red-300 active:red-400"
+              flex items-center gap-2 rounded-lg px-4 py-2 outline-none
+              transition="all duration-300 ease-in-out"
+              @click="handleEndCall"
+            >
+              <div i-solar:end-call-rounded-bold />
+              <div text="black dark:white">
+                End Call
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div class="w-[140px] space-y-4">
-        <button
-          v-if="callStarted"
-          class="flex items-center rounded-md bg-red-100 px-4 py-2 text-red-700 space-x-2 hover:bg-red-200"
-          @click="() => {
-            callStarted = false;
-            callStartTime = null;
-            playing = false;
-            isListening = false;
-            isSpeaking = false;
-          }"
-        >
-          <i i-lucide-phone-off class="h-5 w-5" />
-          <span>End call</span>
-        </button>
-        <button
+        <Carousel
           v-else
-          class="flex items-center rounded-md px-4 py-2 space-x-2" :class="[
-            ready ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-blue-100 text-blue-700 opacity-50 cursor-not-allowed',
+          class="embla outline-none"
+          transition="all duration-500 ease-in-out"
+          :class="[
+            callStarted ? 'embla-edge-disabled px-16 h-80 w-140' : 'px-8 h-50 w-120',
           ]"
-          :disabled="!ready"
-          @click="handleStartCall"
         >
-          <span>Start call</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="absolute bottom-4 text-sm">
-      Built with
-      <a
-        href="https://github.com/huggingface/transformers.js"
-        rel="noopener noreferrer"
-        target="_blank"
-        class="text-blue-600 hover:underline"
-      >
-        🤗 Transformers.js
-      </a>
+          <CarouselContent class="h-full flex gap-4" :style="{ touchAction: 'pan-y pinch-zoom' }">
+            <CarouselItem
+              v-for="([k, v], index) in Object.entries(voices)"
+              :key="index"
+              :style="{
+                backgroundColor: shadesOfColorsFromRangeByIndex(index, Object.values(voices).length, { baseAmplify: 0.85, factor: 0.4 }),
+                color: shadesOfColorsFromRangeByIndex(index, Object.values(voices).length, { baseAmplify: 0.5, factor: 0.2 }),
+              }"
+              class="h-full w-full flex-[0_0_80%] cursor-pointer rounded-lg"
+              :class="[
+                callStarted && voice !== k ? 'opacity-0' : '',
+              ]"
+              transition="all duration-500 ease-in-out"
+              @click="() => handleStartCall(k)"
+            >
+              <Transition name="fade" mode="out-in">
+                <div v-if="!callStarted" class="h-full w-full flex items-center justify-center gap-4 overflow-hidden rounded-lg">
+                  <div i-solar:phone-bold text-2xl />
+                  <div text-2xl>
+                    {{ v.name }}
+                  </div>
+                </div>
+                <div v-else class="h-full w-full flex items-center justify-center gap-4 overflow-hidden rounded-lg">
+                  <div i-svg-spinners:3-dots-bounce text-2xl />
+                  <div text-lg>
+                    Connecting to {{ v.name }}...
+                  </div>
+                </div>
+              </Transition>
+            </CarouselItem>
+          </CarouselContent>
+        </Carousel>
+      </Transition>
     </div>
   </div>
 </template>
@@ -399,5 +456,78 @@ async function handleStartCall(): Promise<void> {
     transform: scale(2);
     opacity: 0;
   }
+}
+
+.embla {
+  position: relative;
+  overflow: hidden;
+}
+
+.embla::before,
+.embla::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.embla-edge-disabled.embla::before,
+.embla-edge-disabled.embla::after {
+  display: none;
+}
+
+.embla::before {
+  left: -24px;
+  background: linear-gradient(to right, #ffffff 32px, transparent);
+}
+
+.embla::after {
+  right: -24px;
+  background: linear-gradient(to left, #ffffff 32px, transparent);
+}
+
+.dark .embla::before {
+  left: -24px;
+  background: linear-gradient(to right, #121212 32px, transparent);
+}
+
+.dark .embla::after {
+  right: -24px;
+  background: linear-gradient(to left, #121212 32px, transparent);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.2s ease-in-out;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.fade-scale-enter-to,
+.fade-scale-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
 </style>

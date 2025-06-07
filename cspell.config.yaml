@@ -48,6 +48,7 @@ words:
   - DuckDBWASMQ
   - DuckDBWASMQuery
   - elevenlabs
+  - embla
   - Factorio
   - formkit
   - giteeai
@@ -131,6 +132,7 @@ words:
   - siliconcloud
   - sizecheck
   - smallserial
+  - SmolLM
   - Sniglet
   - stepfun
   - supergroup
@@ -158,6 +160,5 @@ words:
   - yolo
   - yolov9
   - zhipu
-  - SmolLM
 ignoreWords: []
 import: []

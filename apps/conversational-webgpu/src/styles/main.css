@@ -1,23 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
-
-* {
-  font-family: 'Poppins', sans-serif;
-}
-
-html {
-  overflow: hidden;
+:root {
+  --bg-color-light: rgb(255 255 255);
+  --bg-color-dark: rgb(18 18 18);
+  --bg-color: var(--bg-color-light);
 }
 
 html,
 body,
 #app {
+  height: 100%;
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
-  transition: background-color 0.3s ease-in-out;
+  overscroll-behavior: none;
+}
+
+html {
+  background: var(--bg-color);
+  transition: all 0.3s ease-in-out;
 }
 
 html.dark {
-  background-color: #111;
+  --bg-color: var(--bg-color-dark);
+  color-scheme: dark;
 }

@@ -12,6 +12,12 @@ export type WorkerMessageEventStatus = SharedWorkerMessageEvent<{
   duration?: 'until_next'
 }, 'status'>
 export type WorkerMessageEventOutput = SharedWorkerMessageEvent<{ text: string, result: RawAudio }, 'output'>
+export type WorkerMessageEventSetVoiceResponse = SharedWorkerMessageEvent<{ ok: boolean }, 'set_voice_response'>
 
 export type WorkerMessageEvent =
-| WorkerMessageEventProgress | WorkerMessageEventInfo | WorkerMessageEventError | WorkerMessageEventStatus | WorkerMessageEventOutput
+  | WorkerMessageEventProgress
+  | WorkerMessageEventInfo
+  | WorkerMessageEventError
+  | WorkerMessageEventStatus
+  | WorkerMessageEventOutput
+  | WorkerMessageEventSetVoiceResponse

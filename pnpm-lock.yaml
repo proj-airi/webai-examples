@@ -80,6 +80,9 @@ importers:
       '@xsai-transformers/shared':
         specifier: ^0.0.6
         version: 0.0.6
+      culori:
+        specifier: ^4.0.1
+        version: 4.0.1
       embla-carousel-vue:
         specifier: ^8.6.0
         version: 8.6.0(vue@3.5.14(typescript@5.8.3))
@@ -111,6 +114,9 @@ importers:
       '@moeru/std':
         specifier: 0.1.0-beta.1
         version: 0.1.0-beta.1
+      '@types/culori':
+        specifier: ^4.0.0
+        version: 4.0.0
       '@vitejs/plugin-vue':
         specifier: ^5.2.4
         version: 5.2.4(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(less@4.2.1)(terser@5.17.6)(tsx@4.19.3)(yaml@2.8.0))(vue@3.5.14(typescript@5.8.3))
@@ -1412,6 +1418,9 @@ packages:
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
 
+  '@types/culori@4.0.0':
+    resolution: {integrity: sha512-aFljQwjb++sl6TAyEXeHTiK/fk9epZOQ+nMmadjnAvzZFIvNoQ0x8XQYfcOaRTBwmDUPUlghhZCJ66MTcqQAsg==}
+
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
 
@@ -2219,6 +2228,10 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  culori@4.0.1:
+    resolution: {integrity: sha512-LSnjA6HuIUOlkfKVbzi2OlToZE8OjFi667JWN9qNymXVXzGDmvuP60SSgC+e92sd7B7158f7Fy3Mb6rXS5EDPw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   data-urls@5.0.0:
     resolution: {integrity: sha512-ZYP5VBHshaDAiVZxjbRVcFJpc+4xGgT0bK3vzy1HLN8jTO975HEbuYzZJcHoQEY5K1a0z8YayJkyVETa08eNTg==}
@@ -5619,6 +5632,8 @@ snapshots:
   '@types/cookie@0.6.0':
     optional: true
 
+  '@types/culori@4.0.0': {}
+
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 0.7.34
@@ -6650,6 +6665,8 @@ snapshots:
     optional: true
 
   csstype@3.1.3: {}
+
+  culori@4.0.1: {}
 
   data-urls@5.0.0:
     dependencies:
