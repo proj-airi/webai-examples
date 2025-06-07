@@ -1,45 +1,182 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
 
 import AudioPanel from './components/AudioPanel.vue'
 import VideoPanel from './components/VideoPanel.vue'
-import { useAudio } from './composables/useAudio'
-import { useCombinedMode } from './composables/useCombinedMode'
-import { useVision } from './composables/useVision'
+import { useAudioStore } from './composables/useAudio'
+import { useVisionStore } from './composables/useVision'
+
+// Interface for captured image
+interface CapturedImage {
+  imageBuffer: Uint8ClampedArray
+  imageWidth: number
+  imageHeight: number
+  channels: 1 | 2 | 3 | 4
+}
 
 // Initialize composables
-const audio = useAudio()
-const vision = useVision()
-const combined = useCombinedMode()
+const audio = useAudioStore()
+const vision = useVisionStore()
+const { instructionText, videoScreen, captureCanvas } = storeToRefs(vision)
+const { onListeningStart, onListeningEnd } = storeToRefs(audio)
+
+// Combined mode state (moved from useCombinedMode)
+const combinedMode = ref<boolean>(false)
+const callStarted = ref<boolean>(false)
+const callStartTime = ref<number | null>(null)
+const elapsedTime = ref<string>('00:00')
+const ripples = ref<number[]>([])
+const lastCapturedImage = ref<CapturedImage | null>(null)
+
+// Ripple animation management
+let rippleInterval: NodeJS.Timeout | null = null
+
+function startRippleAnimation() {
+  if (rippleInterval)
+    return
+
+  rippleInterval = setInterval(() => {
+    const id = Date.now()
+    ripples.value = [...ripples.value, id]
+    setTimeout(() => {
+      ripples.value = ripples.value.filter(r => r !== id)
+    }, 1500)
+  }, 1000)
+}
+
+function stopRippleAnimation() {
+  if (rippleInterval) {
+    clearInterval(rippleInterval)
+    rippleInterval = null
+  }
+  ripples.value = []
+}
+
+// Capture and process combined vision-audio interaction
+async function processVisionAudioCombined(instruction: string) {
+  if (!lastCapturedImage.value) {
+    console.warn('No captured image available')
+    return
+  }
+
+  try {
+    const originalInstruction = instructionText.value
+    instructionText.value = instruction
+
+    const response = await vision.processImage(instruction)
+
+    instructionText.value = originalInstruction
+
+    if (response) {
+      audio.synthesizeText(response)
+    }
+  }
+  catch (e) {
+    console.error('Error in combined processing:', e)
+  }
+}
+
+// Handle when audio listening starts
+function onAudioListeningStart() {
+  if (combinedMode.value) {
+    lastCapturedImage.value = vision.captureImage()
+  }
+}
+
+// Handle when audio listening ends
+function onAudioListeningEnd(instruction: string) {
+  if (combinedMode.value && lastCapturedImage.value) {
+    processVisionAudioCombined(instruction)
+  }
+}
+
+// Start combined session
+async function startCombinedSession() {
+  try {
+    // Load vision model if needed
+    await vision.loadVisionModel()
+
+    // Setup audio call
+    await audio.setupAudioCall()
+
+    // Start combined mode
+    combinedMode.value = true
+    callStartTime.value = Date.now()
+    callStarted.value = true
+
+    audio.startCall()
+
+    // Start ripple animation
+    startRippleAnimation()
+  }
+  catch (error) {
+    console.error('Failed to start combined session:', error)
+    stopCombinedSession()
+  }
+}
+
+// Stop combined session
+function stopCombinedSession() {
+  combinedMode.value = false
+  callStarted.value = false
+  callStartTime.value = null
+  lastCapturedImage.value = null
+
+  audio.endCall()
+  stopRippleAnimation()
+}
 
 // Setup combined mode integration
 function setupCombinedModeIntegration() {
   // Connect audio callbacks to combined mode
-  audio.onListeningStart.value = () => {
-    combined.onAudioListeningStart(vision.captureImage)
+  onListeningStart.value = onAudioListeningStart
+
+  onListeningEnd.value = () => {
+    onAudioListeningEnd(instructionText.value)
   }
-
-  audio.onListeningEnd.value = () => {
-    combined.onAudioListeningEnd(vision.instructionText.value)
-  }
-
-  // Connect combined mode callbacks to individual systems
-  combined.visionProcessFn.value = async (instruction: string, _image: any) => {
-    const originalInstruction = vision.instructionText.value
-    vision.instructionText.value = instruction
-
-    const result = await vision.processImage(instruction)
-
-    vision.instructionText.value = originalInstruction
-    return result || null
-  }
-
-  combined.audioSynthesizeFn.value = audio.synthesizeText
-  combined.audioSetupFn.value = audio.setupAudioCall
-  combined.audioStartFn.value = audio.startCall
-  combined.audioEndFn.value = audio.endCall
-  combined.visionLoadFn.value = vision.loadVisionModel
 }
+
+// Watch for call timer
+watch(callStarted, () => {
+  let timerInterval: NodeJS.Timeout | null = null
+
+  if (callStarted.value && callStartTime.value) {
+    timerInterval = setInterval(() => {
+      if (!callStartTime.value)
+        return
+
+      const diff = Math.floor((Date.now() - callStartTime.value) / 1000)
+      const minutes = String(Math.floor(diff / 60)).padStart(2, '0')
+      const seconds = String(diff % 60).padStart(2, '0')
+      elapsedTime.value = `${minutes}:${seconds}`
+    }, 1000)
+  }
+  else {
+    elapsedTime.value = '00:00'
+  }
+
+  // Cleanup timer when call ends
+  return () => {
+    if (timerInterval) {
+      clearInterval(timerInterval)
+    }
+  }
+})
+
+// Provide combined mode state and functions to child components
+provide('combined', {
+  // State
+  combinedMode,
+  callStarted,
+  elapsedTime,
+  ripples,
+  lastCapturedImage,
+
+  // Methods
+  startCombinedSession,
+  stopCombinedSession,
+})
 
 // Lifecycle
 onMounted(() => {
@@ -53,6 +190,11 @@ onMounted(() => {
 onUnmounted(() => {
   audio.cleanup()
   vision.cleanup()
+
+  // Cleanup combined mode resources
+  if (rippleInterval) {
+    clearInterval(rippleInterval)
+  }
 })
 </script>
 
@@ -62,12 +204,12 @@ onUnmounted(() => {
     <VideoPanel>
       <template #video-element>
         <video
-          :ref="(el) => vision.videoScreen.value = el as HTMLVideoElement"
+          :ref="(el) => videoScreen = el as HTMLVideoElement"
           autoplay
           muted
           class="relative z-0 h-full w-full object-cover"
         />
-        <canvas :ref="(el) => vision.captureCanvas.value = el as HTMLCanvasElement" class="hidden" />
+        <canvas :ref="(el) => captureCanvas = el as HTMLCanvasElement" class="hidden" />
       </template>
     </VideoPanel>
 

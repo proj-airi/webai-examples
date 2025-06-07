@@ -1,15 +1,42 @@
 <script setup lang="ts">
-import { useDark } from '@vueuse/core'
+import type { Ref } from 'vue'
 
-import { useCombinedMode } from '../composables/useCombinedMode'
-import { useVision } from '../composables/useVision'
+import { useDark } from '@vueuse/core'
+import { storeToRefs } from 'pinia'
+import { inject } from 'vue'
+
+import { useVisionStore } from '../composables/useVision'
 import Progress from './Progress.vue'
 import Range from './Range.vue'
 
+// Interface for captured image
+interface CapturedImage {
+  imageBuffer: Uint8ClampedArray
+  imageWidth: number
+  imageHeight: number
+  channels: 1 | 2 | 3 | 4
+}
+
+// Type for combined mode state and functions
+interface CombinedMode {
+  // State
+  combinedMode: Ref<boolean>
+  callStarted: Ref<boolean>
+  elapsedTime: Ref<string>
+  ripples: Ref<number[]>
+  lastCapturedImage: Ref<CapturedImage | null>
+
+  // Methods
+  startCombinedSession: () => Promise<void>
+  stopCombinedSession: () => void
+}
+
 // Get data directly from composables
-const vision = useVision()
-const combined = useCombinedMode()
+const vision = storeToRefs(useVisionStore())
 const isDark = useDark({ disableTransition: false })
+
+// Inject combined mode state from parent App.vue
+const combined = inject<CombinedMode>('combined')
 </script>
 
 <template>
@@ -33,7 +60,7 @@ const isDark = useDark({ disableTransition: false })
 
       <!-- Performance Monitor -->
       <div
-        v-if="combined.combinedMode.value"
+        v-if="combined?.combinedMode.value"
         class="absolute left-4 top-16 z-10 flex gap-2 border border-neutral-400/40 rounded-xl bg-white/80 px-3 py-2 text-sm text-black backdrop-blur-sm dark:border-neutral-500/50 dark:bg-neutral-900/80 dark:text-white"
       >
         <span>FPS: <span class="font-mono">{{ vision.fpsCounter.value }}</span></span>
@@ -42,7 +69,7 @@ const isDark = useDark({ disableTransition: false })
 
       <!-- Vision Controls -->
       <div
-        v-if="combined.combinedMode.value"
+        v-if="combined?.combinedMode.value"
         class="absolute bottom-4 left-4 z-10 grid grid-cols-[0.3fr_0.4fr_0.3fr] min-w-[280px] items-center gap-x-2 gap-y-1 border border-neutral-400/40 rounded-xl bg-neutral-500/40 px-3 py-2 text-sm text-white/98 backdrop-blur-lg dark:border-neutral-500/50 dark:bg-neutral-900/70 dark:text-neutral-100/90"
       >
         <!-- Scale Control -->
@@ -52,7 +79,7 @@ const isDark = useDark({ disableTransition: false })
           :min="0.1"
           :max="1.0"
           :step="0.1"
-          :disabled="!combined.combinedMode.value"
+          :disabled="!combined?.combinedMode.value"
           class="flex-1"
         />
         <div class="text-right font-mono">
@@ -66,7 +93,7 @@ const isDark = useDark({ disableTransition: false })
           :min="128"
           :max="512"
           :step="32"
-          :disabled="!combined.combinedMode.value"
+          :disabled="!combined?.combinedMode.value"
           class="flex-1"
         />
         <div class="text-right font-mono">
@@ -80,7 +107,7 @@ const isDark = useDark({ disableTransition: false })
             v-model="vision.instructionText.value"
             placeholder="What do you see?"
             type="text"
-            :disabled="!combined.combinedMode.value"
+            :disabled="!combined?.combinedMode.value"
             class="mt-1 w-full border border-neutral-500/50 rounded-lg bg-neutral-700/50 px-2 py-1 text-sm outline-none focus:border-neutral-400 dark:bg-neutral-950 dark:focus:border-neutral-500"
           >
         </div>
@@ -88,7 +115,7 @@ const isDark = useDark({ disableTransition: false })
 
       <!-- Response Display -->
       <div
-        v-if="vision.responseText.value && combined.combinedMode.value"
+        v-if="vision.responseText.value && combined?.combinedMode.value"
         class="absolute bottom-20 left-1/2 z-10 max-w-[80%] transform border border-neutral-400/40 rounded-xl bg-neutral-700/80 px-3 py-2 text-center text-white/98 backdrop-blur-lg -translate-x-1/2 dark:border-neutral-500/50 dark:bg-neutral-900/90 dark:text-neutral-100/90"
       >
         {{ vision.responseText.value }}

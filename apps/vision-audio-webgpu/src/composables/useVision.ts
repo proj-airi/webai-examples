@@ -3,12 +3,13 @@ import type { VLMWorker } from '../workers/vision/vlm'
 
 import { useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
+import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { createVLMWorker } from '../workers/vision/vlm'
 import workerURL from '../workers/vision/worker?worker&url'
 
-export function useVision() {
+export const useVisionStore = defineStore('vision', () => {
   // Vision state
   const { videoInputs, permissionGranted, isSupported } = useDevicesList({
     constraints: { video: true, audio: false },
@@ -282,4 +283,4 @@ export function useVision() {
     cleanup,
     onProgress,
   }
-}
+})

@@ -1,4 +1,5 @@
 import { MotionPlugin } from '@vueuse/motion'
+import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 
 import App from './App.vue'
@@ -8,5 +9,6 @@ import './styles/main.css'
 import 'uno.css'
 
 createApp(App)
+  .use(createPinia())
   .use(MotionPlugin)
   .mount('#app')

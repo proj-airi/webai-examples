@@ -1,6 +1,7 @@
 import type { VoiceName, Voices } from '../types/kokoro'
 import type { WorkerMessageEvent } from '../types/worker'
 
+import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 import { INPUT_SAMPLE_RATE } from '../constants'
@@ -8,7 +9,7 @@ import WORKLET_URL from '../workers/audio/play-worklet?worker&url'
 import VAD_WORKLET_URL from '../workers/audio/vad-processor?worker&url'
 import WORKER_URL from '../workers/audio/worker?url'
 
-export function useAudio() {
+export const useAudioStore = defineStore('audio', () => {
   // Audio state
   const audioWorker = ref<Worker | null>(null)
   const voice = ref<VoiceName>('af_heart')
@@ -231,4 +232,4 @@ export function useAudio() {
     endCall,
     cleanup,
   }
-}
+})
