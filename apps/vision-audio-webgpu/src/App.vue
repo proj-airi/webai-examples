@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CapturedImage } from './types/combined'
+
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
 
@@ -6,14 +8,6 @@ import AudioPanel from './components/AudioPanel.vue'
 import VideoPanel from './components/VideoPanel.vue'
 import { useAudioStore } from './composables/use-audio'
 import { useVisionStore } from './composables/use-vision'
-
-// Interface for captured image
-interface CapturedImage {
-  imageBuffer: Uint8ClampedArray
-  imageWidth: number
-  imageHeight: number
-  channels: 1 | 2 | 3 | 4
-}
 
 // Initialize composables
 const audio = useAudioStore()
