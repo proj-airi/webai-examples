@@ -62,6 +62,8 @@ watch(callStarted, () => {
 })
 
 onMounted(() => {
+  callStarted.value = true
+
   loading.value = true
 
   try {
@@ -328,7 +330,10 @@ function shadesOfColorsFromRangeByIndex(
 </script>
 
 <template>
-  <div class="relative h-100dvh w-100dvw flex items-center justify-center">
+  <div class="relative h-100dvh w-100dvw flex flex-col items-center justify-center">
+    <div absolute left-4 top-4 opacity-50>
+      Conversational WebGPU
+    </div>
     <div h-full flex items-center justify-center>
       <Transition name="fade" mode="out-in">
         <div v-if="initializationErrored" class="absolute inset-0 flex items-center justify-center" text="red-500 dark:red-400">
@@ -483,6 +488,20 @@ function shadesOfColorsFromRangeByIndex(
         </Carousel>
       </Transition>
     </div>
+    <div mb-4 flex items-center gap-2 text-sm opacity-50>
+      <div inline-flex items-center gap-2>
+        Built with
+        <div i-logos:hugging-face-icon />
+        <a href="https://huggingface.co/docs/transformers.js/index" class="decoration-neutral-700 dark:decoration-neutral-200" decoration-underline decoration-dashed>Transformers.js</a>
+      </div>
+      <div>
+        |
+      </div>
+      <div inline-flex items-center gap-2>
+        <div i-simple-icons:github />
+        <a href="https://github.com/proj-airi/webai-examples/tree/main/apps/conversational-webgpu" class="decoration-neutral-700 dark:decoration-neutral-200" decoration-underline decoration-dashed>GitHub</a>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -520,23 +539,23 @@ function shadesOfColorsFromRangeByIndex(
 }
 
 .embla::before {
-  left: -24px;
-  background: linear-gradient(to right, #ffffff 32px, transparent);
+  left: -32px;
+  background: linear-gradient(90deg, #ffffff 0%, #ffffff 66%, transparent 80%);
 }
 
 .embla::after {
-  right: -24px;
-  background: linear-gradient(to left, #ffffff 32px, transparent);
+  right: -32px;
+  background: linear-gradient(270deg, #ffffff 0%, #ffffff 66%, transparent 80%);
 }
 
 .dark .embla::before {
-  left: -24px;
-  background: linear-gradient(to right, #121212 32px, transparent);
+  left: -32px;
+  background: linear-gradient(90deg, #121212 0%, #121212 66%, transparent 80%);
 }
 
 .dark .embla::after {
-  right: -24px;
-  background: linear-gradient(to left, #121212 32px, transparent);
+  right: -32px;
+  background: linear-gradient(270deg, #121212 0%, #121212 66%, transparent 80%);
 }
 
 .fade-enter-active,
