@@ -25,8 +25,12 @@ const listeningScale = ref<number>(1)
 const speakingScale = ref<number>(1)
 const ripples = ref<number[]>([])
 
+const errored = ref(false)
+const error = ref<string>('')
+const initializationErrored = ref<boolean>(false)
+const initializationError = ref<string>('')
+
 const modelsInitialized = ref<boolean>(false)
-const error = ref<string | null>(null)
 const elapsedTime = ref<string>('00:00')
 const worker = ref<Worker | null>(null)
 
@@ -66,6 +70,12 @@ onMounted(() => {
     })
 
     const onError = (err: Error | unknown): void => {
+      if (!callStarted.value) {
+        initializationErrored.value = true
+        initializationError.value = err instanceof Error ? err.message : String(err)
+      }
+
+      errored.value = true
       error.value = err instanceof Error ? err.message : String(err)
     }
 
@@ -114,6 +124,9 @@ onMounted(() => {
     }
   }
   catch (err) {
+    initializationErrored.value = true
+    initializationError.value = err instanceof Error ? err.message : String(err)
+
     console.error('Failed to initialize worker:', err)
     loading.value = false
   }
@@ -318,69 +331,96 @@ function shadesOfColorsFromRangeByIndex(
   <div class="relative h-100dvh w-100dvw flex items-center justify-center">
     <div h-full flex items-center justify-center>
       <Transition name="fade" mode="out-in">
-        <div v-if="loading">
-          <div i-svg-spinners:3-dots-bounce text-2xl />
+        <div v-if="initializationErrored" class="absolute inset-0 flex items-center justify-center" text="red-500 dark:red-400">
+          <div flex flex-col items-center justify-center gap-4>
+            <div i-solar:danger-triangle-line-duotone text-2xl />
+            <div>
+              {{ initializationError }}
+            </div>
+          </div>
+        </div>
+        <div v-else-if="loading">
+          <div flex flex-col items-center justify-center gap-4>
+            <div i-svg-spinners:3-dots-bounce text-2xl />
+            <div>
+              Initiating modules required for the call...
+            </div>
+          </div>
         </div>
         <div v-else-if="callStarted" h-full flex flex-col items-center justify-between p-4>
           <div>
             <div class="mb-4 flex items-center gap-2">
-              <div text="cyan-400 dark:cyan-500" text-lg>
+              <div text="cyan-600 dark:cyan-400" text-lg>
                 {{ voices[voice]?.name || voice }} {{ elapsedTime }}
               </div>
             </div>
           </div>
-          <div class="relative aspect-square h-32 w-32 flex flex-shrink-0 items-center justify-center">
-            <template v-if="callStarted">
+          <div flex flex-col items-center gap-4>
+            <div class="relative aspect-square h-32 w-32 flex flex-shrink-0 items-center justify-center">
+              <template v-if="callStarted">
+                <div
+                  v-for="id in ripples"
+                  :key="id"
+                  class="pointer-events-none absolute inset-0 border-2 rounded-full"
+                  :class="[
+                    errored ? 'border-red-200 dark:border-red-400' : 'border-cyan-200 dark:border-cyan-500',
+                  ]"
+                  style="animation: ripple 1.5s ease-out forwards"
+                />
+              </template>
+              <!-- Pulsing loader while initializing -->
               <div
-                v-for="id in ripples"
-                :key="id"
-                class="pointer-events-none absolute inset-0 border-2 border-cyan-200 rounded-full dark:border-cyan-500"
-                style="animation: ripple 1.5s ease-out forwards"
+                class="absolute h-32 w-32 rounded-full" :class="[
+                  error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-800',
+                  !modelsInitialized ? 'animate-ping opacity-75' : '',
+                ]"
+                style="animation-duration: 1.5s"
               />
-            </template>
-            <!-- Pulsing loader while initializing -->
-            <div
-              class="absolute h-32 w-32 rounded-full" :class="[
-                error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-800',
-                !modelsInitialized ? 'animate-ping opacity-75' : '',
-              ]"
-              style="animation-duration: 1.5s"
-            />
-            <!-- Main rings -->
-            <div
-              class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
-                error ? 'bg-red-300 dark:bg-red-400' : 'bg-cyan-300 dark:bg-cyan-800',
-                !modelsInitialized ? 'opacity-0' : '',
-              ]"
-              :style="{ transform: `scale(${speakingScale})` }"
-            />
-            <div
-              class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
-                error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-600',
-                !modelsInitialized ? 'opacity-0' : '',
-              ]"
-              :style="{ transform: `scale(${listeningScale})` }"
-            />
-            <!-- Center text: show error if present, else existing statuses -->
-            <div
-              class="absolute z-10 text-center text-sm" :class="[
-                error ? 'text-red-700' : 'text-gray-700 dark:text-white',
-              ]"
-            >
-              <template v-if="error">
-                {{ error }}
-              </template>
-              <template v-else>
-                <template v-if="!modelsInitialized">
-                  Loading...
+              <!-- Main rings -->
+              <div
+                class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
+                  error ? 'bg-red-300 dark:bg-red-400' : 'bg-cyan-300 dark:bg-cyan-800',
+                  !modelsInitialized ? 'opacity-0' : '',
+                ]"
+                :style="{ transform: `scale(${speakingScale})` }"
+              />
+              <div
+                class="absolute h-32 w-32 rounded-full shadow-inner transition-transform duration-300 ease-out" :class="[
+                  error ? 'bg-red-200 dark:bg-red-400' : 'bg-cyan-200 dark:bg-cyan-600',
+                  !modelsInitialized ? 'opacity-0' : '',
+                ]"
+                :style="{ transform: `scale(${listeningScale})` }"
+              />
+              <!-- Center text: show error if present, else existing statuses -->
+              <div
+                class="absolute z-10 text-center text-sm" :class="[
+                  error ? 'text-red-700' : 'text-gray-700 dark:text-white',
+                ]"
+              >
+                <template v-if="error">
+                  <div i-solar:danger-triangle-line-duotone text-2xl />
                 </template>
-                <template v-if="isListening">
-                  Listening...
+                <template v-else>
+                  <template v-if="!modelsInitialized">
+                    <div>
+                      Loading...
+                    </div>
+                  </template>
+                  <template v-if="isListening">
+                    <div>
+                      Listening...
+                    </div>
+                  </template>
+                  <template v-if="isSpeaking">
+                    <div>
+                      Speaking...
+                    </div>
+                  </template>
                 </template>
-                <template v-if="isSpeaking">
-                  Speaking...
-                </template>
-              </template>
+              </div>
+            </div>
+            <div v-if="errored">
+              {{ error }}
             </div>
           </div>
           <div
