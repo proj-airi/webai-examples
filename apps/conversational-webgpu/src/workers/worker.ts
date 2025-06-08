@@ -13,6 +13,7 @@ import type {
   WorkerMessageEventInfo,
   WorkerMessageEventOutput,
   WorkerMessageEventProgress,
+  WorkerMessageEventSetVoiceResponse,
   WorkerMessageEventStatus,
 } from '../types/worker'
 
@@ -239,9 +240,7 @@ async function speechToSpeech(buffer: Float32Array, _data: SpeechData): Promise<
 
   // Set up text-to-speech streaming
   const splitter = new TextSplitterStream()
-  const stream = tts!.stream(splitter, {
-    voice,
-  });
+  const stream = tts!.stream(splitter, { voice });
   (async () => {
     for await (const { text, audio } of stream) {
       globalThis.postMessage({ type: 'output', data: { text, result: audio } } satisfies WorkerMessageEventOutput)
@@ -360,6 +359,14 @@ globalThis.onmessage = async (event: MessageEvent) => {
       return
     case 'set_voice':
       voice = event.data.voice
+
+      globalThis.postMessage({
+        type: 'set_voice_response',
+        data: {
+          ok: true,
+        },
+      } satisfies WorkerMessageEventSetVoiceResponse)
+
       return
     case 'playback_ended':
       isPlaying = false
@@ -412,9 +419,11 @@ globalThis.onmessage = async (event: MessageEvent) => {
         },
       } satisfies WorkerMessageEventStatus)
     }
+
     // Start or continue recording
     isRecording = true
     postSpeechSamples = 0 // Reset the post-speech samples
+
     return
   }
 
@@ -440,13 +449,16 @@ globalThis.onmessage = async (event: MessageEvent) => {
 
 function greet(text: string): void {
   isPlaying = true
+
   const splitter = new TextSplitterStream()
   const stream = tts!.stream(splitter, { voice });
+
   (async () => {
     for await (const { text: chunkText, audio } of stream) {
       globalThis.postMessage({ type: 'output', data: { text: chunkText, result: audio } } satisfies WorkerMessageEventOutput)
     }
   })()
+
   splitter.push(text)
   splitter.close()
   messages.push({ role: 'assistant', content: text })
