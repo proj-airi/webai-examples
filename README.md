@@ -1,5 +1,18 @@
 <h1 align="center">Web AI Examples</h1>
 
+> [!NOTE]
+>
+> This project is part of (and also associate to) the [Project AIRI](https://github.com/moeru-ai/airi), we aim to build a LLM-driven VTuber like [Neuro-sama](https://www.youtube.com/@Neurosama) (subscribe if you didn't!) if you are interested in, please do give it a try on [live demo](https://airi.moeru.ai).
+>
+> We experiment HuggingFace models and Transformers.js APIs here in WebAI examples repository, where it helped to grow our technologies inside of the [Project AIRI](https://github.com/moeru-ai/airi) primary repository. Things like:
+>
+> - Real-time voice chat
+> - Real-time visual understanding
+> - Voice processing
+> - Video frames processing
+>
+> were all born from here.
+
 ## Development
 
 ```shell
