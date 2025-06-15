@@ -118,11 +118,17 @@ onMounted(() => {
     }
 
     worker.value.addEventListener('message', onMessage)
-    worker.value.addEventListener('error', (event: ErrorEvent) => onError(event.error))
+    worker.value.addEventListener('error', (event: ErrorEvent) => {
+      onError(event.error)
+      loading.value = false
+    })
 
     return () => {
       worker.value?.removeEventListener('message', onMessage)
-      worker.value?.removeEventListener('error', (event: ErrorEvent) => onError(event.error))
+      worker.value?.removeEventListener('error', (event: ErrorEvent) => {
+        onError(event.error)
+        loading.value = false
+      })
     }
   }
   catch (err) {
