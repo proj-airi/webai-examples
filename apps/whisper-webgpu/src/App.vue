@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { MessageEvents, ProgressMessageEvents } from './libs/types'
-
 import { useDevicesList, useScreenSafeArea, useUserMedia, useWebWorker } from '@vueuse/core'
 import { computed, onUnmounted, ref, watch, watchEffect } from 'vue'
+
+import type { MessageEvents, ProgressMessageEvents } from './libs/types'
 
 import AudioVisualizer from './components/AudioVisualizer.vue'
 import Progress from './components/Progress.vue'

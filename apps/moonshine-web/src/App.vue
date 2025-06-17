@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { MessageEvent, MessageEventBufferRequest, MessageEventInfo, MessageEventLoad, MessageEventOutput, MessageEventStatus } from './libs/types'
-
 import { TresCanvas } from '@tresjs/core'
 import { useWebWorker } from '@vueuse/core'
 import { ACESFilmicToneMapping, SRGBColorSpace } from 'three'
 import { onMounted, ref, watch } from 'vue'
+
+import type { MessageEvent, MessageEventBufferRequest, MessageEventInfo, MessageEventLoad, MessageEventOutput, MessageEventStatus } from './libs/types'
 
 import AnimatedMesh from './components/AnimatedMesh.vue'
 import BloomScene from './components/BloomScene.vue'

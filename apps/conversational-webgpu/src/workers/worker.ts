@@ -8,14 +8,6 @@ import type {
 } from '@huggingface/transformers'
 import type { Device, DType } from '@xsai-transformers/shared/types'
 import type { GenerateOptions } from 'kokoro-js'
-import type {
-  WorkerMessageEventError,
-  WorkerMessageEventInfo,
-  WorkerMessageEventOutput,
-  WorkerMessageEventProgress,
-  WorkerMessageEventSetVoiceResponse,
-  WorkerMessageEventStatus,
-} from '../types/worker'
 
 import {
   // VAD
@@ -33,6 +25,15 @@ import {
 } from '@huggingface/transformers'
 import { isWebGPUSupported } from 'gpuu/webgpu'
 import { KokoroTTS, TextSplitterStream } from 'kokoro-js'
+
+import type {
+  WorkerMessageEventError,
+  WorkerMessageEventInfo,
+  WorkerMessageEventOutput,
+  WorkerMessageEventProgress,
+  WorkerMessageEventSetVoiceResponse,
+  WorkerMessageEventStatus,
+} from '../types/worker'
 
 import {
   EXIT_THRESHOLD,

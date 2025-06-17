@@ -2,10 +2,11 @@
 import type { PreTrainedModel, Processor } from '@huggingface/transformers'
 import type { ProgressInfo } from '@xsai-transformers/shared/types'
 import type { LoadMessageEvents, ProcessMessageEvents, WorkerMessageEvent } from '@xsai-transformers/shared/worker'
-import type { Load, Process } from './types'
 
 import { AutoModel, AutoProcessor, RawImage } from '@huggingface/transformers'
 import { isWebGPUSupported } from 'gpuu/webgpu'
+
+import type { Load, Process } from './types'
 
 let processor: Processor | undefined
 let model: PreTrainedModel | undefined

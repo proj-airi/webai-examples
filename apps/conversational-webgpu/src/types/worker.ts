@@ -1,5 +1,6 @@
 import type { ProgressInfo, RawAudio } from '@huggingface/transformers'
 import type { WorkerMessageEvent as SharedWorkerMessageEvent } from '@xsai-transformers/shared/worker'
+
 import type { Voices } from './kokoro'
 
 export type WorkerMessageEventProgress = SharedWorkerMessageEvent<{ message: ProgressInfo }, 'progress'>
@@ -14,10 +15,10 @@ export type WorkerMessageEventStatus = SharedWorkerMessageEvent<{
 export type WorkerMessageEventOutput = SharedWorkerMessageEvent<{ text: string, result: RawAudio }, 'output'>
 export type WorkerMessageEventSetVoiceResponse = SharedWorkerMessageEvent<{ ok: boolean }, 'set_voice_response'>
 
-export type WorkerMessageEvent =
-  | WorkerMessageEventProgress
-  | WorkerMessageEventInfo
-  | WorkerMessageEventError
-  | WorkerMessageEventStatus
-  | WorkerMessageEventOutput
-  | WorkerMessageEventSetVoiceResponse
+export type WorkerMessageEvent
+  = | WorkerMessageEventProgress
+    | WorkerMessageEventInfo
+    | WorkerMessageEventError
+    | WorkerMessageEventStatus
+    | WorkerMessageEventOutput
+    | WorkerMessageEventSetVoiceResponse

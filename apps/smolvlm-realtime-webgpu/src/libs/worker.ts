@@ -1,10 +1,11 @@
 /* eslint-disable no-restricted-globals */
 import type { PreTrainedModel, Processor, ProgressInfo, Tensor } from '@huggingface/transformers'
 import type { LoadMessageEvents, ProcessMessageEvents, WorkerMessageEvent } from '@xsai-transformers/shared/worker'
-import type { Load, Process } from './vlm'
 
 import { AutoModelForVision2Seq, AutoProcessor, RawImage } from '@huggingface/transformers'
 import { isWebGPUSupported } from 'gpuu/webgpu'
+
+import type { Load, Process } from './vlm'
 
 let processor: Processor
 let model: PreTrainedModel

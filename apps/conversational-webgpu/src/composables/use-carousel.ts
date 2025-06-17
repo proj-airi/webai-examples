@@ -1,9 +1,9 @@
-// https://github.com/unovue/shadcn-vue/blob/cf6f2023b766b39f9c1c413eaa4260c87645cd5a/apps/www/src/registry/default/ui/carousel/useCarousel.ts
-import type { UnwrapRefCarouselApi as CarouselApi, CarouselEmits, CarouselProps } from '../types/carousel'
-
 import { createInjectionState } from '@vueuse/core'
 import emblaCarouselVue from 'embla-carousel-vue'
 import { onMounted, ref } from 'vue'
+
+// https://github.com/unovue/shadcn-vue/blob/cf6f2023b766b39f9c1c413eaa4260c87645cd5a/apps/www/src/registry/default/ui/carousel/useCarousel.ts
+import type { UnwrapRefCarouselApi as CarouselApi, CarouselEmits, CarouselProps } from '../types/carousel'
 
 const [useProvideCarousel, useInjectCarousel] = createInjectionState(
   ({

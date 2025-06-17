@@ -1,7 +1,8 @@
 import type { LoadOptionProgressCallback, LoadOptions } from '@xsai-transformers/shared/types'
-import type { Load, Process, ProcessResult } from './types'
 
 import { createTransformersWorker } from '@xsai-transformers/shared/worker'
+
+import type { Load, Process, ProcessResult } from './types'
 
 export function createYoloV9Worker<T extends LoadOptions<object>>(createOptions: { baseURL?: string }) {
   if (!createOptions.baseURL) {

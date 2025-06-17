@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { LoadOptionProgressCallback, ProgressInfo, ProgressStatusInfo } from '@xsai-transformers/shared/types'
-import type { VLMWorker } from './libs/vlm'
 
 import { useDark, useDevicesList, useElementBounding, useUserMedia } from '@vueuse/core'
 import { check } from 'gpuu/webgpu'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+
+import type { VLMWorker } from './libs/vlm'
 
 import Progress from './components/Progress.vue'
 import Range from './components/Range.vue'

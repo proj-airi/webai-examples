@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { VoiceName, Voices } from './types/kokoro'
-import type { WorkerMessageEvent } from './types/worker'
-
 import { converter, formatRgb, oklch } from 'culori'
 import { onMounted, ref, watch } from 'vue'
+
+import type { VoiceName, Voices } from './types/kokoro'
+import type { WorkerMessageEvent } from './types/worker'
 
 import { Carousel, CarouselContent, CarouselItem } from './components/Carousel'
 import { INPUT_SAMPLE_RATE } from './constants'
