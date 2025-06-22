@@ -23,6 +23,12 @@ pnpm i
 pnpm dev
 ```
 
+## Other examples about AI / Model inference from Project AIRI
+
+- [WebAI Example Realtime Voice Chat](https://github.com/proj-airi/webai-example-realtime-voice-chat): 🎤💬 Full example of implementing ChatGPT's realtime voice from scratch with VAD + STT + LLM + TTS technology stack within almost one file!
+- [🤗 candle Examples](https://github.com/proj-airi/candle-examples): Examples of using [🤗 candle](https://github.com/huggingface/candle) for inference AI models in Rust, you could think of it as an alternative and more transformers like library than [Burn Examples (this repository)].
+- [Burn Examples](https://github.com/proj-airi/burn-examples): Examples of using [Burn.dev](https://burn.dev) for inference AI models in Rust, you could think of it as an alternative and more advanced library than [🤗 candle Examples].
+
 ## Other side projects born from Project Airi
 
 - [Awesome AI VTuber](https://github.com/proj-airi/awesome-ai-vtuber): A curated list of AI VTubers and related projects
