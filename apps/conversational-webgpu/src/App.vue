@@ -9,7 +9,7 @@ import { Carousel, CarouselContent, CarouselItem } from './components/Carousel'
 import { INPUT_SAMPLE_RATE } from './constants'
 import WORKLET_URL from './workers/play-worklet?worker&url'
 import VAD_WORKLET_URL from './workers/vad-processor?worker&url'
-import WORKER_URL from './workers/worker?url'
+import WORKER_URL from './workers/worker?worker&url'
 
 const loading = ref<boolean>(false)
 const callStartTime = ref<number | null>(null)
