@@ -62,8 +62,6 @@ watch(callStarted, () => {
 })
 
 onMounted(() => {
-  callStarted.value = true
-
   loading.value = true
 
   try {

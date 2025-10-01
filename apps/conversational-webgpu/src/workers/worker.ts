@@ -74,7 +74,7 @@ let tts: KokoroTTS
 const SYSTEM_MESSAGE: Message = {
   role: 'system',
   content:
-    'You\'re a helpful and conversational voice assistant. Keep your responses short, clear, and casual.',
+    'You\'re a helpful and conversational voice assistant, respond to the user. Keep your responses short, clear, and casual.',
 }
 let messages: Message[] = [SYSTEM_MESSAGE]
 let past_key_values_cache: any = null
@@ -122,7 +122,7 @@ export async function loadModels() {
 
   transcriber = await pipeline(
     'automatic-speech-recognition',
-    'onnx-community/whisper-base', // or "onnx-community/moonshine-base-ONNX",
+    'onnx-community/whisper-medium', // or "onnx-community/moonshine-base-ONNX",
     {
       device,
       dtype: whisperDtypeMap[device as keyof typeof whisperDtypeMap],
@@ -136,7 +136,7 @@ export async function loadModels() {
   await transcriber(new Float32Array(INPUT_SAMPLE_RATE)) // Compile shaders
 
   llm = await AutoModelForCausalLM.from_pretrained(
-    'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+    'onnx-community/Qwen2.5-0.5B-Instruct-ONNX',
     {
       dtype: await isWebGPUSupported() ? 'q4f16' : 'int8',
       device: await isWebGPUSupported() ? 'webgpu' : 'wasm',
@@ -148,7 +148,7 @@ export async function loadModels() {
   })
 
   tokenizer = await AutoTokenizer.from_pretrained(
-    'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+    'onnx-community/Qwen2.5-0.5B-Instruct-ONNX',
   ).catch((error: Error) => {
     globalThis.postMessage({ type: 'error', data: { error, message: error.message } } satisfies WorkerMessageEventError<Error>)
     throw error
